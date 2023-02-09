@@ -5,12 +5,13 @@
 
 Preprocess::Preprocess()
   :feature_enabled(0), lidar_type(AVIA), blind(0.01), point_filter_num(1)
+  // :feature_enabled(0), lidar_type(VELO16), blind(2.0), point_filter_num(1)
 {
-  inf_bound = 10;
-  N_SCANS   = 6;
+  inf_bound = 4;
+  N_SCANS   = 16;
   group_size = 8;
   disA = 0.01;
-  disA = 0.1; // B?
+  disB = 0.1; // B?
   p2l_ratio = 225;
   limit_maxmid =6.25;
   limit_midmin =6.25;
@@ -54,8 +55,12 @@ void Preprocess::process(const sensor_msgs::PointCloud2::ConstPtr &msg, PointClo
     break;
 
   case VELO16:
+  {
+    // printf("------------------------VELO16");
     velodyne_handler(msg);
+    // *pcl_out = pl_surf;
     break;
+  }
   
   default:
     printf("Error LiDAR Type");
@@ -257,6 +262,8 @@ void Preprocess::oust64_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
 
 void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
 {
+    // pcl::fromROSMsg(*msg, pl_surf);
+    // return;
     pl_surf.clear();
     pl_corn.clear();
     pl_full.clear();
@@ -265,6 +272,7 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
     pcl::fromROSMsg(*msg, pl_orig);
     uint plsize = pl_orig.points.size();
     pl_surf.reserve(plsize);
+    // ROS_ERROR("pl_orig.points.size() is %d", plsize);
 
     bool is_first[16];
     bool is_jump[16]={false};       // if jump point
@@ -411,9 +419,14 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
         // if(i==(plsize-1))  printf("index: %d layer: %d, yaw: %lf, offset-time: %lf, condition: %d\n", i, layer, yaw_angle, added_pt.curvature, prints);
         if (i % point_filter_num == 0)
         {
-          if(added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z > blind)
+          // if(added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z > blind)
+          float range_temp_sqrt =added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z;
+          if(range_temp_sqrt > blind * blind && range_temp_sqrt < 100.0 * 100.0) // 75m 认为是 雷达的有效探测范围
           {
-            pl_surf.points.push_back(added_pt);
+            // if (added_pt.x > 0)
+            // {
+              pl_surf.points.push_back(added_pt);
+            // }
           }
         }
       }
@@ -741,8 +754,9 @@ void Preprocess::pub_func(PointCloudXYZI &pl, const ros::Time &ct)
   pl.height = 1; pl.width = pl.size();
   sensor_msgs::PointCloud2 output;
   pcl::toROSMsg(pl, output);
-  output.header.frame_id = "livox";
+  output.header.frame_id = "lidar";
   output.header.stamp = ct;
+  // pub_surf.publish(output);
 }
 
 int Preprocess::plane_judge(const PointCloudXYZI &pl, vector<orgtype> &types, uint i_cur, uint &i_nex, Eigen::Vector3d &curr_direct)

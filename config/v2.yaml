@@ -1,0 +1,82 @@
+feature_extract_enable : 0
+point_filter_num : 2
+max_iteration : 10
+dense_map_enable : 1
+filter_size_surf : 0.3 # 0.3 不能太小，否则误差会 累计 的很快
+filter_size_map : 0.4 # 0.4
+cube_side_length : 100000
+debug : 0
+grid_size : 40
+patch_size : 8
+img_enable : 1
+lidar_enable : 1
+# outlier_threshold: The outlier threshold value of photometric error (square) of a single pixel. 
+# It is recommended that 50~250 for the darker scenes, 500~1000 for the brighter scenes. 
+# The smaller the value is, the faster the vio submodule is, but the weaker the anti-degradation ability is.
+outlier_threshold : 800  #500
+ncc_en: true
+ncc_thre: 0.5
+img_point_cov : 1000
+laser_point_cov : 0.001
+cam_fx: 430.885
+cam_fy: 431.067
+cam_cx: 324.299
+cam_cy: 252.805
+
+common:
+    lid_topic:  "/velodyne_points"
+    imu_topic:  "/livox/imu"
+
+preprocess:
+    lidar_type: 2  # Ouster #enum LID_TYPE{AVIA = 1, VELO16, OUST64}; //{1, 2, 3}
+    scan_line: 16
+    blind: 3 # blind x m disable
+
+mapping:
+    acc_cov_scale: 1 #10
+    gyr_cov_scale: 1 #10
+    fov_degree:    180
+#    extrinsic_R: [ 1, 0, 0,
+#                   0, 1, 0,
+#                   0, 0, 1]
+# using
+    extrinsic_R: [ 0.999901 , 0.013091 ,-0.005085,
+                   -0.013061 , 0.999897 , 0.005917 , 
+                   0.005162 , -0.005850 , 0.999970 ]
+    extrinsic_T: [ 0.081677, 0.168409, 0.141423]
+    # extrinsic_T: [0.088, 0.156, 0.154]
+
+
+camera:
+    img_topic: /camera/image_color
+    img_skip: 1 #自定义，对图像的频率进行控制
+
+# 效果还可以的
+    # Rcl: [-0.0382753,-0.996965,0.067793,
+    #       -0.0701223,-0.0649957,-0.995419,
+    #       0.996804,-0.0428537,-0.0674217]
+    # Pcl: [0.012,  -0.066, -0.044]
+    # Pcl: [0.0121275, 0.107503, -0.0388035]
+
+
+    # Rcl: [-0.0386205,-0.996911,0.0683832,
+    #       -0.0719713,-0.0654814,-0.995255,
+    #       0.996659,-0.0433589,-0.0692201]
+    # Pcl: [-0.012,  -0.006, -0.044]
+
+# multi calib
+    # Rcl: [0.0448067,-0.998967,0.00754163,
+    #       -0.0223459,-0.00854955,-0.999714,
+    #       0.998746,0.0446254,-0.0227059]
+    # Pcl: [0.000277147,-7.46595e-05,-0.0449792]
+
+# 多次联合标定的均值 用这个
+    Rcl: [0.0431643, -0.9987869,  0.0236951,
+          0.0684185, -0.0207063, -0.9974418,
+          0.9967225,  0.0446751,  0.0674417]
+    Pcl: [0.012,  -0.066, -0.044]
+    # Pcl: [0.004652, -0.186240, -0.0368784]
+   
+
+
+

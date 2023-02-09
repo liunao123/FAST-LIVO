@@ -1,0 +1,36 @@
+<launch>
+
+	<arg name="rviz" default="true" />
+
+	<rosparam command="load" file="$(find fast_livo)/config/v2.yaml" />
+
+	<node pkg="fast_livo" type="fastlivo_mapping" name="laserMapping" output="screen" >
+		<rosparam file="$(find fast_livo)/config/camera_v2.yaml" />
+	</node>
+	
+	<group if="$(arg rviz)">
+		<node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz_fast_livo" args="-d $(find fast_livo)/rviz_cfg/loam_livox_ouster.rviz" />
+	</group>
+	<!-- <node pkg="image_transport" type="republish" name="republish" args="compressed in:=/left_camera/image raw out:=/left_camera/image" output="screen" respawn="true"/> -->
+
+
+	<!-- <node pkg="rosbag" type="play" name="playrosbag" output="screen" args="/home/bag/v2/nj_v2_outdoor_2023-01-11-16-19-50_s30.bag  -s 32 -duration 1000"> -->
+	<!-- <node pkg="rosbag" type="play" name="playrosbag" output="screen" args="/home/bag/v2/nj_v2_outdoor_2023-01-12-14-52-39.bag  -s 9 -duration 440"> -->
+	<!-- <node pkg="rosbag" type="play" name="playrosbag" output="screen" args="/home/bag/v2/outdoor_low_res-s8.bag  -s 8 "> -->
+		 <!-- <remap from="/velodyne_points" to="/vp" />
+	</node>   -->
+
+	<!-- <node pkg="rs_to_velodyne" type="rs_to_velodyne" name="rs_to_velodyne" output="screen" args=" XYZI XYZIRT ">
+		<remap from="/rslidar_points" to="/vp" />
+	</node>	 -->
+	
+	<!-- <node pkg="rosbag" type="play" name="playrosbag" output="screen" args="/home/bag/v2/nj_v2_outdoor_2023-01-18-10-56-25.bag  -s 60 ">
+	</node> -->
+	
+	<!-- <node pkg="rosbag" type="play" name="playrosbag" output="screen" args="/home/bag/v2/nj_v2_outdoor_2023-01-30-16-43-52.bag  -s 3 -duration 700">	
+		<remap from="/camera/image_color_sync" to="/camera/image_color" />
+	</node> -->
+	
+    <!-- <node pkg="rosbag" type="play" name="playrosbag" output="screen" args="/home/bag/v2/nj_v2_outdoor_2023-02-02-10-41-47_s90.bag  -s 90 -duration 500 -r 2" />	 -->
+
+</launch>

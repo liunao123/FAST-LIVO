@@ -1,0 +1,29 @@
+<launch>
+
+	<arg name="rviz" default="true" />
+
+	<rosparam command="load" file="$(find fast_livo)/config/v1.yaml" />
+
+	<node pkg="fast_livo" type="fastlivo_mapping" name="laserMapping" output="screen" >
+		<rosparam file="$(find fast_livo)/config/camera_v1.yaml" />
+	</node>
+	
+	<group if="$(arg rviz)">
+		<node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz_fast_livo" args="-d $(find fast_livo)/rviz_cfg/loam_livox_ouster.rviz" />
+	</group>
+
+    <!-- indoor -->
+	<!-- <node pkg="rosbag" type="play" name="playrosbag" output="screen" args="/home/bag/v1/nj_indoor_2022-11-29-14-14-23.bag  -s 15 "> 
+	</node>  -->
+
+    <!-- outdoor -->
+	<!-- <node pkg="rosbag" type="play" name="playrosbag" output="screen" args="/home/bag/v1/nj_2022-10-08-13-59-29_s60.bag  -s 60 "/>  -->
+	<!-- <node pkg="rosbag" type="play" name="playrosbag" output="screen" args="/home/bag/v1/nj_2022-10-12-16-39-41.bag  -s 750 -duration 700"/>  -->
+	<!-- <node pkg="rosbag" type="play" name="playrosbag" output="screen" args="/home/bag/v1/nj_2022-10-12-16-39-41.bag  -s 180 -duration 1000"/>  -->
+
+
+    <!-- 130 is static-->
+	<!-- <node pkg="rosbag" type="play" name="playrosbag" output="screen" args="/home/bag/v1/nj_2023-02-02-15-38-43_500s.bag -s 15"/>  -->
+
+
+</launch>

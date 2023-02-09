@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /Global Options1
         - /Grid1
-        - /Axes1
         - /mapping1
         - /mapping1/surround1
         - /mapping1/currPoints1
@@ -15,10 +14,10 @@ Panels:
         - /Odometry1/Odometry1/Shape1
         - /Odometry1/Odometry2
         - /Odometry1/Odometry2/Shape1
-        - /Axes2
         - /Path1
+        - /Pose1
       Splitter Ratio: 0.520588219165802
-    Tree Height: 872
+    Tree Height: 880
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -46,10 +45,10 @@ Visualization Manager:
   Class: ""
   Displays:
     - Alpha: 1
-      Cell Size: 100
+      Cell Size: 10
       Class: rviz/Grid
       Color: 160; 160; 164
-      Enabled: false
+      Enabled: true
       Line Style:
         Line Width: 0.029999999329447746
         Value: Lines
@@ -61,29 +60,22 @@ Visualization Manager:
         Z: 0
       Plane: XY
       Plane Cell Count: 160
-      Reference Frame: <Fixed Frame>
-      Value: false
-    - Class: rviz/Axes
-      Enabled: true
-      Length: 0.699999988079071
-      Name: Axes
-      Radius: 0.15000000596046448
-      Reference Frame: <Fixed Frame>
+      Reference Frame: world
       Value: true
     - Class: rviz/Group
       Displays:
         - Alpha: 0.10000000149011612
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 10
-            Min Value: -10
+            Max Value: 21.673479080200195
+            Min Value: -1.4422448873519897
             Value: true
           Axis: Z
           Channel Name: intensity
           Class: rviz/PointCloud2
           Color: 238; 238; 236
-          Color Transformer: RGB8
-          Decay Time: 999999
+          Color Transformer: AxisColor
+          Decay Time: 1000
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
@@ -95,7 +87,7 @@ Visualization Manager:
           Size (Pixels): 1
           Size (m): 0.05000000074505806
           Style: Points
-          Topic: /cloud_registered_rgb
+          Topic: /cloud_registered
           Unreliable: true
           Use Fixed Frame: true
           Use rainbow: true
@@ -110,7 +102,7 @@ Visualization Manager:
           Channel Name: intensity
           Class: rviz/PointCloud2
           Color: 255; 255; 255
-          Color Transformer: FlatColor
+          Color Transformer: RGB8
           Decay Time: 0
           Enabled: true
           Invert Rainbow: true
@@ -197,29 +189,22 @@ Visualization Manager:
             Head Length: 0
             Head Radius: 0
             Shaft Length: 0.05000000074505806
-            Shaft Radius: 0.05000000074505806
+            Shaft Radius: 0.5
             Value: Axes
           Topic: /aft_mapped_to_init
           Unreliable: false
           Value: true
       Enabled: true
       Name: Odometry
-    - Class: rviz/Axes
-      Enabled: true
-      Length: 0.699999988079071
-      Name: Axes
-      Radius: 0.029999999329447746
-      Reference Frame: aft_mapped
-      Value: true
     - Alpha: 0
       Buffer Length: 2
       Class: rviz/Path
-      Color: 238; 238; 236
+      Color: 0; 255; 0
       Enabled: true
       Head Diameter: 0
       Head Length: 0
       Length: 0.30000001192092896
-      Line Style: Billboards
+      Line Style: Lines
       Line Width: 0.09000000357627869
       Name: Path
       Offset:
@@ -234,11 +219,52 @@ Visualization Manager:
       Topic: /path
       Unreliable: false
       Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        camera:
+          Value: true
+        imu:
+          Value: true
+        velodyne:
+          Value: true
+        world:
+          Value: true
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        world:
+          imu:
+            velodyne:
+              camera:
+                {}
+      Update Interval: 0
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.009999999776482582
+      Class: rviz/Pose
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Pose
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Axes
+      Topic: /lidar_pose
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
     Default Light: true
-    Fixed Frame: camera_init
+    Fixed Frame: world
     Frame Rate: 30
   Name: root
   Tools:
@@ -261,34 +287,34 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz/Orbit
-      Distance: 55.30350112915039
+      Class: rviz/ThirdPersonFollower
+      Distance: 58.862972259521484
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 15.29288387298584
-        Y: 2.8262939453125
-        Z: -2.462726593017578
+        X: -19.49521255493164
+        Y: 1.3447904586791992
+        Z: -1.1324271326884627e-5
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
-      Invert Z Axis: true
+      Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.31520360708236694
+      Pitch: 1.494796872138977
       Target Frame: <Fixed Frame>
-      Value: Orbit (rviz)
-      Yaw: 3.027986764907837
+      Value: ThirdPersonFollower (rviz)
+      Yaw: 3.732213258743286
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1023
+  Height: 1025
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd000000040000000000000156000003a5fc0200000011fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000003a5000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d00610067006501000002aa000001380000000000000000fb0000000a0049006d0061006700650000000394000001600000000000000000fb0000000a0049006d00610067006501000002c5000000c70000000000000000fb0000000a0049006d00610067006501000002c5000000c70000000000000000fb0000000a0049006d00610067006501000002c5000000c70000000000000000fb0000000c00430061006d00650072006101000002d50000010f0000000000000000fb0000000c00430061006d0065007200610100000310000000d40000000000000000fb0000000c00430061006d0065007200610000000319000000cb0000000000000000fb0000000a0049006d0061006700650100000319000000cb00000000000000000000000100000152000003a5fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003d000003a5000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073f00000052fc0100000002fb0000000800540069006d0065020000050b00000258000004f5000001e0fb0000000800540069006d0065010000000000000450000000000000000000000425000003a500000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd000000040000000000000156000003abfc0200000011fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003b000003ab000000c700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000a0049006d00610067006501000002aa000001380000000000000000fb0000000a0049006d0061006700650000000394000001600000000000000000fb0000000a0049006d00610067006501000002c5000000c70000000000000000fb0000000a0049006d00610067006501000002c5000000c70000000000000000fb0000000a0049006d00610067006501000002c5000000c70000000000000000fb0000000c00430061006d00650072006101000002d50000010f0000000000000000fb0000000c00430061006d0065007200610100000310000000d40000000000000000fb0000000c00430061006d0065007200610000000319000000cb0000000000000000fb0000000a0049006d0061006700650100000319000000cb00000000000000000000000100000152000003abfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003b000003ab000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073f00000052fc0100000002fb0000000800540069006d0065020000028b0000025800000429000001e0fb0000000800540069006d0065010000000000000450000000000000000000000489000003ab00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -297,6 +323,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1753
+  Width: 1853
   X: 67
   Y: 27
