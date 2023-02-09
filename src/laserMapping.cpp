@@ -487,7 +487,7 @@ void imu_cbk(const sensor_msgs::Imu::ConstPtr &msg_in)
 
 cv::Mat getImageFromMsg(const sensor_msgs::ImageConstPtr& img_msg) {
   cv::Mat img;
-  img = cv_bridge::toCvShare(img_msg, "bgr8")->image;
+  img = cv_bridge::toCvCopy(img_msg, "bgr8")->image;
   return img;
 }
 
@@ -938,44 +938,6 @@ void publish_odometry(const ros::Publisher & pubOdomAftMapped)
 // }
     pubOdomAftMapped.publish(odomAftMapped);
 
-    static tf::TransformBroadcaster br;
-    tf::Transform                   transform;
-    tf::Quaternion                  q;
-    transform.setOrigin(tf::Vector3(state.pos_end(0), state.pos_end(1), state.pos_end(2)));
-    q.setW(geoQuat.w);
-    q.setX(geoQuat.x);
-    q.setY(geoQuat.y);
-    q.setZ(geoQuat.z);
-    transform.setRotation( q );
-    br.sendTransform( tf::StampedTransform( transform, odomAftMapped.header.stamp, "world", "imu" ) );
-
-    V3D extT;
-    M3D extR;
-    extT<<VEC_FROM_ARRAY(extrinT);
-    extR<<MAT_FROM_ARRAY(extrinR);
-    Eigen::Quaterniond q_eigen = Eigen::Quaterniond(extR);//旋转矩阵转为四元数
-    q_eigen.normalize();
-    transform.setOrigin(tf::Vector3(extT(0), extT(1), extT(2)));
-    q.setW(q_eigen.w());
-    q.setX(q_eigen.x());
-    q.setY(q_eigen.y());
-    q.setZ(q_eigen.z());
-    transform.setRotation( q );
-    br.sendTransform( tf::StampedTransform( transform, odomAftMapped.header.stamp, "imu", lidar_frame ) );
-
-    extT<<VEC_FROM_ARRAY(cameraextrinT);
-    extR<<MAT_FROM_ARRAY(cameraextrinR);
-    q_eigen = Eigen::Quaterniond(extR);//旋转矩阵转为四元数
-    q_eigen.normalize();
-    transform.setOrigin(tf::Vector3(extT(0), extT(1), extT(2)));
-    q.setW(q_eigen.w());
-    q.setX(q_eigen.x());
-    q.setY(q_eigen.y());
-    q.setZ(q_eigen.z());
-    transform.setRotation( q );
-    // 给的是 T_cl   , 所以这里取了 逆 矩阵
-    br.sendTransform( tf::StampedTransform( transform.inverse(), odomAftMapped.header.stamp, lidar_frame, "camera" ) );
-
     static ofstream lio_path_file("/home/map/fast_livo_body_path.txt", ios::out);
     lio_path_file.open("/home/map/fast_livo_body_path.txt", ios::app);
     lio_path_file.setf(ios::fixed, ios::floatfield);
@@ -1018,6 +980,44 @@ void publish_lidar_pose(const ros::Publisher & pose_publisher)
     msg_body_pose.header.stamp = ros::Time().fromSec(last_timestamp_lidar); // ros::Time::now();
 
     pose_publisher.publish(msg_body_pose);
+
+    static tf::TransformBroadcaster br;
+    tf::Transform                   transform;
+    tf::Quaternion                  q;
+    transform.setOrigin(tf::Vector3(state.pos_end(0), state.pos_end(1), state.pos_end(2)));
+    q.setW(geoQuat.w);
+    q.setX(geoQuat.x);
+    q.setY(geoQuat.y);
+    q.setZ(geoQuat.z);
+    transform.setRotation( q );
+    br.sendTransform( tf::StampedTransform( transform, odomAftMapped.header.stamp, "world", "imu" ) );
+
+    V3D extT;
+    M3D extR;
+    extT<<VEC_FROM_ARRAY(extrinT);
+    extR<<MAT_FROM_ARRAY(extrinR);
+    Eigen::Quaterniond q_eigen = Eigen::Quaterniond(extR);//旋转矩阵转为四元数
+    q_eigen.normalize();
+    transform.setOrigin(tf::Vector3(extT(0), extT(1), extT(2)));
+    q.setW(q_eigen.w());
+    q.setX(q_eigen.x());
+    q.setY(q_eigen.y());
+    q.setZ(q_eigen.z());
+    transform.setRotation( q );
+    br.sendTransform( tf::StampedTransform( transform, odomAftMapped.header.stamp, "imu", lidar_frame ) );
+
+    extT<<VEC_FROM_ARRAY(cameraextrinT);
+    extR<<MAT_FROM_ARRAY(cameraextrinR);
+    q_eigen = Eigen::Quaterniond(extR);//旋转矩阵转为四元数
+    q_eigen.normalize();
+    transform.setOrigin(tf::Vector3(extT(0), extT(1), extT(2)));
+    q.setW(q_eigen.w());
+    q.setX(q_eigen.x());
+    q.setY(q_eigen.y());
+    q.setZ(q_eigen.z());
+    transform.setRotation( q );
+    // 给的是 T_cl   , 所以这里取了 逆 矩阵
+    br.sendTransform( tf::StampedTransform( transform.inverse(), odomAftMapped.header.stamp, lidar_frame, "camera" ) );
 
 }
 
