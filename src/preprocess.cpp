@@ -323,6 +323,16 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
         
         double yaw_angle = atan2(added_pt.y, added_pt.x) * 57.2957;
 
+        if (i % point_filter_num == 0)
+        {
+          // if(added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z > blind)
+          float range_temp_sqrt =added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z;
+          if(range_temp_sqrt < blind * blind || range_temp_sqrt > 100.0 * 100.0) // 75m 认为是 雷达的有效探测范围
+          {
+            continue;
+          }
+        }
+
         if (is_first[layer])
         {
           // printf("layer: %d; is first: %d", layer, is_first[layer]);
