@@ -58,7 +58,6 @@ void Preprocess::process(const sensor_msgs::PointCloud2::ConstPtr &msg, PointClo
   {
     // printf("------------------------VELO16");
     velodyne_handler(msg);
-    // *pcl_out = pl_surf;
     break;
   }
   
@@ -274,6 +273,10 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
     pl_surf.reserve(plsize);
     // ROS_ERROR("pl_orig.points.size() is %d", plsize);
 
+    // debug
+    // pcl::PCDWriter pcd_writer;
+    // cout << "saving...";
+    // pcd_writer.writeBinary("/home/msg.pcd", pl_orig);
     bool is_first[16];
     bool is_jump[16]={false};       // if jump point
     double yaw_fp[20]={0};     // yaw of first scan point
@@ -298,7 +301,7 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
     double yaw_cali = yaw_first - yaw_end;
     yaw_cali = yaw_cali > 300.0 ? (yaw_cali - 360.0) : yaw_cali < -300.0 ? (yaw_cali += 360.0) : yaw_cali;
     if(yaw_cali < 15.0) omega_l *= 1.0 + yaw_cali / 360.0;
-    // printf("yaw_cali: %lf \n", yaw_cali);
+    printf("yaw_cali: %lf \n", yaw_cali);
 
     if(feature_enabled)
     {
@@ -367,6 +370,12 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
       {
         PointCloudXYZI &pl = pl_buff[j];
         uint linesize = pl.size();
+        // fix bug when extract lio feature
+        // ROS_WARN("linesize : %d", linesize);
+        if (linesize == 0)
+        {
+          continue;
+        }
         vector<orgtype> &types = typess[j];
         types.clear();
         types.resize(linesize);
@@ -382,6 +391,8 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
         types[linesize].range = sqrt(pl[linesize].x * pl[linesize].x + pl[linesize].y * pl[linesize].y);
         give_feature(pl, types);
       }
+    // cout << "-------------saving feature pcd..." << pl_surf.points.size();
+    // pcd_writer.writeBinary("/home/msg_feature.pcd", pl_surf);  
     }
     else
     {

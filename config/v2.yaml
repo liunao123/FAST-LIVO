@@ -1,5 +1,5 @@
-feature_extract_enable : 0
-point_filter_num : 2
+feature_extract_enable : false # 只能用 true or false
+point_filter_num : 1
 max_iteration : 10
 dense_map_enable : 1
 filter_size_surf : 0.3 # 0.3 不能太小，否则误差会 累计 的很快
@@ -22,6 +22,12 @@ cam_fx: 430.885
 cam_fy: 431.067
 cam_cx: 324.299
 cam_cy: 252.805
+
+# cam_fx: 432.03715207
+# cam_fy: 432.09322577
+# cam_cx: 324.74811778
+# cam_cy: 255.54341165
+
 
 common:
     lid_topic:  "/velodyne_points"
