@@ -39,8 +39,8 @@ preprocess:
     blind: 3 # blind x m disable
 
 mapping:
-    acc_cov_scale: 1 #10
-    gyr_cov_scale: 1 #10
+    acc_cov_scale: 10 #10
+    gyr_cov_scale: 10 #10
     fov_degree:    180
 #    extrinsic_R: [ 1, 0, 0,
 #                   0, 1, 0,
@@ -55,7 +55,7 @@ mapping:
 
 camera:
     img_topic: /camera/image_color
-    img_skip: 1 #自定义，对图像的频率进行控制
+    img_rate: 10 #自定义，对图像的频率进行控制
 
 # 效果还可以的
     # Rcl: [-0.0382753,-0.996965,0.067793,

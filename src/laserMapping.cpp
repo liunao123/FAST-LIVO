@@ -96,7 +96,7 @@ condition_variable sig_buffer;
 // mutex mtx_buffer_pointcloud;
 
 M3D Lidar_offset_to_IMU_extrinsic_R(M3D::Identity());
-int img_skip = 1;
+int img_rate = 10;
 string lidar_frame = "livox";
 
 string root_dir = ROOT_DIR;
@@ -497,20 +497,18 @@ void img_cbk(const sensor_msgs::ImageConstPtr& msg)
     // if (first_img_time<0 && time_buffer.size()>0) {
     //     first_img_time = msg->header.stamp.toSec() - time_buffer.front();
     // }
-    
-    static int cnts = 0;
-    if (img_skip != 1)
-    {
-      if(cnts++ % img_skip == 0)
-      {
-          return;
-      }
-    }
 
     if (!img_en) 
     {
         return;
     }
+
+    // 控制图像的频率
+    if(msg->header.stamp.toSec() - last_timestamp_img < 1.0 / img_rate)
+    {
+        return ;
+    }
+
     printf("[ INFO ]: get img at time: %.6f.\n", msg->header.stamp.toSec());
     if (msg->header.stamp.toSec() < last_timestamp_img)
     {
@@ -1193,7 +1191,7 @@ void readParameters(ros::NodeHandle &nh)
     nh.param<string>("common/lid_topic",lid_topic,"/livox/lidar");
     nh.param<string>("common/imu_topic", imu_topic,"/livox/imu");
     nh.param<string>("camera/img_topic", img_topic,"/usb_cam/image_raw");
-    nh.param<int>("camera/img_skip", img_skip, 1);
+    nh.param<int>("camera/img_rate", img_rate, 1);
     nh.param<double>("filter_size_corner",filter_size_corner_min,0.5);
     nh.param<double>("filter_size_surf",filter_size_surf_min,0.5);
     nh.param<double>("filter_size_map",filter_size_map_min,0.5);
