@@ -1,32 +1,32 @@
-feature_extract_enable : false # 只能用 true or false
-point_filter_num : 1
+feature_extract_enable : true # 只能用 true or false
+point_filter_num : 1  
 max_iteration : 10
 dense_map_enable : 1
-filter_size_surf : 0.3 # 0.3 不能太小，否则误差会 累计 的很快
+filter_size_surf : 0.2 # 0.3 不能太小，否则误差会 累计 的很快
 filter_size_map : 0.4 # 0.4
 cube_side_length : 100000
-debug : 0
-grid_size : 40
-patch_size : 8
+debug : 1
+grid_size : 30
+patch_size : 6
 img_enable : 1
 lidar_enable : 1
 # outlier_threshold: The outlier threshold value of photometric error (square) of a single pixel. 
 # It is recommended that 50~250 for the darker scenes, 500~1000 for the brighter scenes. 
 # The smaller the value is, the faster the vio submodule is, but the weaker the anti-degradation ability is.
-outlier_threshold : 800  #500
+outlier_threshold : 600  #500
 ncc_en: true
-ncc_thre: 0.5
+ncc_thre: 0.5     # 可以控制 sub_sparse_map->errors, 越小，rgb_img上的点越多
 img_point_cov : 1000
 laser_point_cov : 0.001
-cam_fx: 430.885
-cam_fy: 431.067
-cam_cx: 324.299
-cam_cy: 252.805
+# cam_fx: 430.885
+# cam_fy: 431.067
+# cam_cx: 324.299
+# cam_cy: 252.805
 
-# cam_fx: 432.03715207
-# cam_fy: 432.09322577
-# cam_cx: 324.74811778
-# cam_cy: 255.54341165
+cam_fx: 432.03715207
+cam_fy: 432.09322577
+cam_cx: 324.74811778
+cam_cy: 255.54341165
 
 
 common:
@@ -39,9 +39,9 @@ preprocess:
     blind: 3 # blind x m disable
 
 mapping:
-    acc_cov_scale: 10 #10
-    gyr_cov_scale: 10 #10
-    fov_degree:    180
+    acc_cov_scale: 1 #10
+    gyr_cov_scale: 1 #10
+    fov_degree:    360
 #    extrinsic_R: [ 1, 0, 0,
 #                   0, 1, 0,
 #                   0, 0, 1]

@@ -1435,7 +1435,7 @@ int main(int argc, char** argv)
 
         if (! LidarMeasures.is_lidar_end) 
         {
-            cout<<"[ VIO ]: Raw feature num: "<<pcl_wait_pub->points.size() << "." << endl;
+            cout<<"[ LIO ]: Raw feature num: "<<pcl_wait_pub->points.size() << "." << endl;
             if (first_lidar_time<10)
             {
                 continue;
