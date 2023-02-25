@@ -1,0 +1,51 @@
+feature_extract_enable : false
+point_filter_num : 1
+max_iteration : 10
+dense_map_enable : 1
+filter_size_surf : 0.1 # 0.2
+filter_size_map : 0.3 # 0.4
+cube_side_length : 100000
+debug : 0
+grid_size : 40
+patch_size : 8
+img_enable : 0
+lidar_enable : 1
+outlier_threshold : 30 # < 100 for xiong an
+ncc_en: true
+ncc_thre: 0.5
+img_point_cov : 1000 #1000
+laser_point_cov : 0.001
+
+cam_fx: 864.48
+cam_fy: 864.64
+cam_cx: 351
+cam_cy: 256
+
+common:
+    lid_topic:  "/livox/lidar"
+    # lid_topic:  "/laser_cloud_flat"
+    imu_topic:  "/livox/imu"
+
+preprocess:
+    lidar_type: 1  # Ouster #enum LID_TYPE{AVIA = 1, VELO16, OUST64}; //{1, 2, 3}
+    scan_line: 6
+    blind: 0.1 # blind x m disable
+
+mapping:
+    acc_cov_scale: 10 #10
+    gyr_cov_scale: 10 #10
+    fov_degree:    80
+    extrinsic_R: [1, 0, 0,
+                  0, 1, 0,
+                  0, 0, 1]
+    extrinsic_T: [0.05512, 0.02226, 0.0297] # Horizon
+
+camera:
+    img_topic: /camera/image_color
+    img_rate: 15 #自定义，对图像的频率进行控制 #频率不能过高 less 10
+
+    # ok
+    Rcl: [-0.00627231,-0.99993,-0.0100337,
+          -0.0211809,0.0101645,-0.999724,
+          0.999756,-0.00605805,-0.0212431]
+    Pcl: [-0.0649474,0.0707562,-0.0337088]

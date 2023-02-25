@@ -6,6 +6,7 @@
 Preprocess::Preprocess()
   :feature_enabled(0), lidar_type(AVIA), blind(0.01), point_filter_num(1)
 {
+  max_blind = 75.0;
   inf_bound = 4;
   N_SCANS   = 16;
   group_size = 8;
@@ -325,7 +326,7 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
 
         // if(added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z > blind)
         float range_temp_sqrt =added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z ;
-        if(range_temp_sqrt < blind * blind || range_temp_sqrt > 50.0 * 50.0) // 75m 认为是 雷达的有效探测范围
+        if(range_temp_sqrt < blind * blind || range_temp_sqrt > max_blind * max_blind) // max_blind 认为是 雷达的有效探测范围
         {
           continue;
         }
@@ -385,8 +386,8 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
         types[linesize].range = sqrt(pl[linesize].x * pl[linesize].x + pl[linesize].y * pl[linesize].y);
         give_feature(pl, types);
       }
-    // cout << "-------------saving feature pcd..." << pl_surf.points.size();
-    // pcd_writer.writeBinary("/home/msg_feature.pcd", pl_surf);  
+      // cout << "-------------saving feature pcd..." << pl_surf.points.size();
+      // pcd_writer.writeBinary("/home/msg_feature.pcd", pl_surf);  
     }
     else
     {
@@ -436,7 +437,7 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
         {
           // if(added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z > blind)
           float range_temp_sqrt =added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z;
-          if(range_temp_sqrt > blind * blind && range_temp_sqrt < 100.0 * 100.0) // 75m 认为是 雷达的有效探测范围
+          if(range_temp_sqrt > blind * blind && range_temp_sqrt < max_blind * max_blind) // max_blind 认为是 雷达的有效探测范围
           {
             // if (added_pt.x > 0)
             // {

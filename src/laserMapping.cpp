@@ -419,7 +419,7 @@ void lasermap_fov_segment()
 
 void standard_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg) 
 {
-    lidar_frame = msg->header.frame_id;
+
     mtx_buffer.lock();
     // cout<<"got feature"<<endl;
     if (msg->header.stamp.toSec() < last_timestamp_lidar)
@@ -431,7 +431,7 @@ void standard_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg)
     PointCloudXYZI::Ptr  ptr(new PointCloudXYZI());
     p_pre->process(msg, ptr);
     // ROS_INFO("get point cloud at time: %.6f and size: %d", msg->header.stamp.toSec() - 0.1, ptr->points.size());
-    printf("[ INFO ]: get point cloud at time: %.6f and size: %d.\n", msg->header.stamp.toSec(), int(ptr->points.size()));
+    // printf("[ INFO ]: get point cloud at time: %.6f and size: %d.\n", msg->header.stamp.toSec(), int(ptr->points.size()));
     lidar_buffer.push_back(ptr);
     // time_buffer.push_back(msg->header.stamp.toSec() - 0.1);
     // last_timestamp_lidar = msg->header.stamp.toSec() - 0.1;
@@ -443,14 +443,14 @@ void standard_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg)
 
 void livox_pcl_cbk(const livox_ros_driver::CustomMsg::ConstPtr &msg) 
 {
-    lidar_frame = msg->header.frame_id;
+
     mtx_buffer.lock();
     if (msg->header.stamp.toSec() < last_timestamp_lidar)
     {
         ROS_ERROR("lidar loop back, clear buffer");
         lidar_buffer.clear();
     }
-    printf("[ INFO ]: get point cloud at time: %.6f.\n", msg->header.stamp.toSec());
+    // printf("[ INFO ]: get point cloud at time: %.6f.\n", msg->header.stamp.toSec());
     PointCloudXYZI::Ptr ptr(new PointCloudXYZI());
     p_pre->process(msg, ptr);
     lidar_buffer.push_back(ptr);
@@ -504,7 +504,7 @@ void img_cbk(const sensor_msgs::ImageConstPtr& msg)
     }
 
     // 控制图像的频率
-    if(msg->header.stamp.toSec() - last_timestamp_img < 1.0 / img_rate)
+    if( std::fabs( msg->header.stamp.toSec() - last_timestamp_img )<= 1.0 / img_rate)
     {
         return ;
     }
@@ -1191,7 +1191,7 @@ void readParameters(ros::NodeHandle &nh)
     nh.param<string>("common/lid_topic",lid_topic,"/livox/lidar");
     nh.param<string>("common/imu_topic", imu_topic,"/livox/imu");
     nh.param<string>("camera/img_topic", img_topic,"/usb_cam/image_raw");
-    nh.param<int>("camera/img_rate", img_rate, 1);
+    nh.param<int>("camera/img_rate", img_rate, 10);
     nh.param<double>("filter_size_corner",filter_size_corner_min,0.5);
     nh.param<double>("filter_size_surf",filter_size_surf_min,0.5);
     nh.param<double>("filter_size_map",filter_size_map_min,0.5);
@@ -1200,6 +1200,7 @@ void readParameters(ros::NodeHandle &nh)
     nh.param<double>("mapping/gyr_cov_scale",gyr_cov_scale,1.0);
     nh.param<double>("mapping/acc_cov_scale",acc_cov_scale,1.0);
     nh.param<double>("preprocess/blind", p_pre->blind, 0.01);
+    nh.param<double>("preprocess/max_blind", p_pre->max_blind, 100.0);
     nh.param<int>("preprocess/lidar_type", p_pre->lidar_type, AVIA);
     nh.param<int>("preprocess/scan_line", p_pre->N_SCANS, 16);
     nh.param<int>("point_filter_num", p_pre->point_filter_num, 2);
