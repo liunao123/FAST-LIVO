@@ -106,6 +106,13 @@ void Preprocess::avia_handler(const livox_ros_driver::CustomMsg::ConstPtr &msg)
         pl_full[i].z = msg->points[i].z;
         pl_full[i].intensity = msg->points[i].reflectivity;
         pl_full[i].curvature = msg->points[i].offset_time / float(1000000); //use curvature as time of each laser points
+
+      // 利用强度来区分 车辆 上的点 testing 0301
+      // if (pl_full[i].intensity <= 40 &&  pl_full[i].z > -1.0 )
+      // {
+      //   continue;
+      // }
+
         pl_buff[msg->points[i].line].push_back(pl_full[i]);
     }
 
@@ -315,14 +322,21 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
         added_pt.normal_x = 0;
         added_pt.normal_y = 0;
         added_pt.normal_z = 0;
-        layer=pl_orig.points[i].ring;
-        if (layer >= N_SCANS) continue;
+        // layer=pl_orig.points[i].ring;
+        // if (layer >= N_SCANS) continue;
         added_pt.x = pl_orig.points[i].x;
         added_pt.y = pl_orig.points[i].y;
         added_pt.z = pl_orig.points[i].z;
         added_pt.intensity = pl_orig.points[i].intensity;
         
         double yaw_angle = atan2(added_pt.y, added_pt.x) * 57.2957;
+
+        // 计算 每个点所在的 ring.  add by ln 20230304.
+        // if there no ring  in original pointclud , we will compute it; 
+        static int RING_ID_MAP_16[] = { 0, 1, 2, 3, 4, 5, 6, 7, 15, 14, 13, 12, 11, 10, 9, 8 };
+        double heigh_angle = atan2(added_pt.z,  std::sqrt(added_pt.x * added_pt.x + added_pt.y * added_pt.y)  ) * 57.2957;
+        layer = RING_ID_MAP_16[int( (heigh_angle + 15.0) / 2.0 + 0.5 )]; //计算点 所在的 ring，参考 r2live里面的 特征提取
+        if (layer >= N_SCANS) continue;
 
         // if(added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z > blind)
         float range_temp_sqrt =added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z ;
@@ -439,10 +453,11 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
           float range_temp_sqrt =added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z;
           if(range_temp_sqrt > blind * blind && range_temp_sqrt < max_blind * max_blind) // max_blind 认为是 雷达的有效探测范围
           {
-            // if (added_pt.x > 0)
+            // if (added_pt.x < 0 and added_pt.y > -0.3)
             // {
-              pl_surf.points.push_back(added_pt);
+            //   continue;
             // }
+              pl_surf.points.push_back(added_pt);
           }
         }
       }

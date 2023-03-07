@@ -189,6 +189,18 @@ void ImuProcess::IMU_init(const MeasureGroup &meas, StatesGroup &state_inout, in
   state_inout.rot_end = Eye3d; // Exp(mean_acc.cross(V3D(0, 0, -1 / scale_gravity)));
   state_inout.bias_g  = mean_gyr;
 
+  // v1
+  // cout<<"cov_acc: "<< cov_acc <<endl;
+  // cout<<"cov_gyr: "<< cov_gyr <<endl;
+  // state_inout.bias_g  = V3D(4.7157402991064573e-05, 2.2978607798053355e-05, 2.1783118083287548e-05);
+  // cov_acc = V3D(2.0259191796012588e-02, 2.1399993219216693e-02, 2.0015146318205921e-02 );
+  // cov_gyr = V3D(3.6806968082877308e-03, 3.3074486920622384e-03, 1.6674201356901494e-03 );
+
+  // v2 0306 重新标定 
+  state_inout.bias_g  = V3D(5.4948744932339505e-07 , 1.1750347349853966e-06,  1.1684096702078937e-06); 
+  cov_gyr = V3D(5.8591807220402780e-05 , 5.6768594514768940e-05, 6.3940101951102265e-05);
+  cov_acc = V3D(5.0349683140255778e-04 , 4.2914934657991096e-04, 5.2044122034212179e-04);
+
   last_imu_ = meas.imu.back();
 }
 #endif

@@ -1,0 +1,76 @@
+feature_extract_enable : true # 只能用 true or false
+point_filter_num : 1  
+max_iteration : 10
+dense_map_enable : 1
+filter_size_surf : 0.15 # 0.3 不能太小，否则误差会 累计 的很快
+filter_size_map : 0.5 # 0.4
+cube_side_length : 100000
+debug : 0
+grid_size : 40
+patch_size : 8
+img_enable : 1
+lidar_enable : 1
+# outlier_threshold: The outlier threshold value of photometric error (square) of a single pixel. 
+# It is recommended that 50~250 for the darker scenes, 500~1000 for the brighter scenes. 
+# The smaller the value is, the faster the vio submodule is, but the weaker the anti-degradation ability is.
+outlier_threshold : 500  #500
+ncc_en: true
+ncc_thre: 0.5     # 可以控制 sub_sparse_map->errors, 越小，rgb_img上的点越多
+img_point_cov : 1000
+laser_point_cov : 0.001
+# cam_fx: 430.885
+# cam_fy: 431.067
+# cam_cx: 324.299
+# cam_cy: 252.805
+
+cam_fx: 432.03715207
+cam_fy: 432.09322577
+cam_cx: 324.74811778
+cam_cy: 255.54341165
+
+
+common:
+    lid_topic:  "/velodyne_points"
+    imu_topic:  "/livox/imu"
+
+preprocess:
+    lidar_type: 2  # Ouster #enum LID_TYPE{AVIA = 1, VELO16, OUST64}; //{1, 2, 3}
+    scan_line: 16
+    blind: 1.0 # blind x m disable
+    max_blind: 80.0 # 2.5m 只包含 坑道内的 点
+
+mapping:
+    acc_cov_scale: 15 #10
+    gyr_cov_scale: 15 #10     sqrt(hz) imu的输出频率
+    fov_degree:  360  #没什么用
+
+    # 0304 重新标定的三个
+    # extrinsic_R: [ 0.999968 , 0.004150 ,-0.006874,
+    #               -0.004101 , 0.999966 , 0.007130,
+    #                0.006904 ,-0.007101 , 0.999951]
+    # extrinsic_T: [0.066667,  0.176002 , 0.231560]
+
+
+    extrinsic_R: [ 0.999746 , 0.022522 ,-0.000690 , 
+                  -0.022517 , 0.999720 , 0.007339 , 
+                   0.000855 ,-0.007322 , 0.999973]
+    extrinsic_T: [0.101012,0.181365,0.206670]
+
+    # extrinsic_R: [ 0.999939 ,-0.008259 , 0.007323 , 
+    #                0.008216 , 0.999949 , 0.005872 ,
+    #               -0.007371 ,-0.005812 , 0.999956 ]
+    # extrinsic_T: [0.069513, 0.206813, 0.212370]
+
+
+camera:
+    img_topic: /camera/image_color
+    img_rate: 15 #自定义，对图像的频率进行控制
+
+# 多次联合标定的均值 用这个
+    Rcl: [0.0431643, -0.9987869,  0.0236951,
+          0.0684185, -0.0207063, -0.9974418,
+          0.9967225,  0.0446751,  0.0674417]
+    Pcl: [0.012,  -0.066, -0.044]   
+
+
+

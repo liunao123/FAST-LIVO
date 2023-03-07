@@ -1247,9 +1247,16 @@ int main(int argc, char** argv)
     cout<<"debug:"<<debug<<" MIN_IMG_COUNT: "<<MIN_IMG_COUNT<<endl;
     pcl_wait_pub->clear();
     // pcl_visual_wait_pub->clear();
-    ros::Subscriber sub_pcl = p_pre->lidar_type == AVIA ? \
-        nh.subscribe(lid_topic, 200000, livox_pcl_cbk) : \
-        nh.subscribe(lid_topic, 200000, standard_pcl_cbk);
+    ros::Subscriber sub_pcl;
+    if(p_pre->lidar_type == AVIA)
+    {
+       sub_pcl =  nh.subscribe(lid_topic, 200000, livox_pcl_cbk);
+    }
+    else
+    {
+      sub_pcl = nh.subscribe(lid_topic, 200000, standard_pcl_cbk);
+      lidar_frame = "velodyne"; 
+    }
     ros::Subscriber sub_imu = nh.subscribe(imu_topic, 200000, imu_cbk);
     ros::Subscriber sub_img = nh.subscribe(img_topic, 200000, img_cbk);
     image_transport::Publisher img_pub = it.advertise("/rgb_img", 1);
@@ -1338,8 +1345,16 @@ int main(int argc, char** argv)
     p_imu->set_acc_cov_scale(V3D(acc_cov_scale, acc_cov_scale, acc_cov_scale));
     p_imu->set_gyr_bias_cov(V3D(0.00001, 0.00001, 0.00001));
     p_imu->set_acc_bias_cov(V3D(0.00001, 0.00001, 0.00001));
-    // p_imu->set_gyr_bias_cov(V3D(8.8885849233e-04, 8.8885849233e-04, 8.8885849233e-04));
-    // p_imu->set_acc_bias_cov(V3D(7.7565195969e-03, 7.7565195969e-03, 7.7565195969e-03));
+
+    // v1 没测试
+    // p_imu->set_gyr_bias_cov(V3D(4.7157402991064573e-05 , 2.2978607798053355e-05 , 2.1783118083287548e-05) );
+    // p_imu->set_acc_bias_cov(V3D(4.2045543374542204e-04 , 3.8317266738219468e-04 , 3.5288167021465936e-04) );
+
+
+    // v2
+    p_imu->set_gyr_bias_cov(V3D(5.4948744932339505e-07 , 1.1750347349853966e-06 , 1.1684096702078937e-06) );
+    p_imu->set_acc_bias_cov(V3D(2.1929344253106320e-05 , 2.0210764440116047e-05 , 1.8900191051348907e-05) );
+
 
     #ifndef USE_IKFOM
     G.setZero();

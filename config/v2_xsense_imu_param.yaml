@@ -1,0 +1,32 @@
+%YAML:1.0
+---
+type: IMU
+name: v2_xsense
+Gyr:
+   unit: "gyr_n: rad / sqrt(s), gyr_w: rad / s^2 / sqrt(Hz)"
+   avg-axis:
+      gyr_n: 5.9766834562091326e-05
+      gyr_w: 9.6431061817222848e-07
+   x-axis:
+      gyr_n: 5.8591807220402780e-05
+      gyr_w: 5.4948744932339505e-07
+   y-axis:
+      gyr_n: 5.6768594514768940e-05
+      gyr_w: 1.1750347349853966e-06
+   z-axis:
+      gyr_n: 6.3940101951102265e-05
+      gyr_w: 1.1684096702078937e-06
+Acc:
+   unit: "acc_n: m / s^2 / sqrt(Hz), acc_w: m / s^3 / sqrt(Hz)"
+   avg-axis:
+      acc_n: 4.8436246610819681e-04
+      acc_w: 2.0346766581523758e-05
+   x-axis:
+      acc_n: 5.0349683140255778e-04
+      acc_w: 2.1929344253106320e-05
+   y-axis:
+      acc_n: 4.2914934657991096e-04
+      acc_w: 2.0210764440116047e-05
+   z-axis:
+      acc_n: 5.2044122034212179e-04
+      acc_w: 1.8900191051348907e-05
