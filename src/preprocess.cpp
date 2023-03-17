@@ -271,12 +271,33 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
     pl_surf.clear();
     pl_corn.clear();
     pl_full.clear();
+    
+    // pcl::PointCloud<velodyne_ros::Point> pl_orig;
+    // pcl::fromROSMsg(*msg, pl_orig);
+    // uint plsize = pl_orig.points.size();
+    // pl_surf.reserve(plsize);
+    // ROS_ERROR("pl_orig.points.size() is %d", plsize);    
 
-    pcl::PointCloud<velodyne_ros::Point> pl_orig;
+    // pcl::PointCloud<velodyne_ros::Point>::Ptr cloud_out(new pcl::PointCloud<velodyne_ros::Point>);
+    // std::vector<int> mapping;
+    // pcl::removeNaNFromPointCloud(pl_orig, pl_orig, mapping);
+
+    // 老的速腾驱动 没有 ring time 等字段，直接转成XYZI，其他的自己计算出来
+    pcl::PointCloud<pcl::PointXYZI> pl_orig;
     pcl::fromROSMsg(*msg, pl_orig);
+
+    // 无效的 nan 得去掉，，否则后面error
+
+    // ROS_ERROR("pl_orig.points.size() is %d",  pl_orig.points.size());
+    std::vector<int> mapping;
+    pcl::removeNaNFromPointCloud(pl_orig, pl_orig, mapping);
+    // ROS_ERROR("pl_orig.points.size() is %d",  pl_orig.points.size());
+
     uint plsize = pl_orig.points.size();
-    pl_surf.reserve(plsize);
-    // ROS_ERROR("pl_orig.points.size() is %d", plsize);
+    if ( plsize <= 0 )
+    {
+      return ;
+    }
 
     // debug
     // pcl::PCDWriter pcd_writer;
@@ -291,13 +312,21 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
     float time_last[16]={0.0}; // last offset time
     float time_jump[16]={0.0}; // offset time before jump
     memset(is_first, true, sizeof(is_first));
+    
+    static int RING_ID_MAP_16[] = {0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15}; //参考 r2live
 
     double yaw_first = atan2(pl_orig.points[0].y, pl_orig.points[0].x) * 57.29578;
     double yaw_end  = yaw_first;
-    int layer_first = pl_orig.points[0].ring;
+
+    double heigh_angle = atan2(pl_orig.points[0].z,  std::sqrt(pl_orig.points[0].x * pl_orig.points[0].x + pl_orig.points[0].y * pl_orig.points[0].y)  ) * 57.2957;
+    int layer_first = RING_ID_MAP_16[int( (heigh_angle + 15.0) / 2.0 + 0.5 )]; //计算点 所在的 ring，参考 r2live里面的 特征提取
+
+    // int layer_first = pl_orig.points[0].ring;
     for (uint i = plsize - 1; i > 0; i--)
     {
-      if (pl_orig.points[i].ring == layer_first)
+      double heigh_angle_i = atan2(pl_orig.points[i].z,  std::sqrt(pl_orig.points[i].x * pl_orig.points[i].x + pl_orig.points[i].y * pl_orig.points[i].y)  ) * 57.2957;
+      int layer_i = RING_ID_MAP_16[int( (heigh_angle + 15.0) / 2.0 + 0.5 )]; //计算点 所在的 ring，参考 r2live里面的 特征提取
+      if ( layer_i == layer_first)
       {
         yaw_end = atan2(pl_orig.points[i].y, pl_orig.points[i].x) * 57.29578;
         break;
@@ -306,7 +335,7 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
     double yaw_cali = yaw_first - yaw_end;
     yaw_cali = yaw_cali > 300.0 ? (yaw_cali - 360.0) : yaw_cali < -300.0 ? (yaw_cali += 360.0) : yaw_cali;
     if(yaw_cali < 15.0) omega_l *= 1.0 + yaw_cali / 360.0;
-    printf("yaw_cali: %lf \n", yaw_cali);
+    // printf("yaw_cali: %lf \n", yaw_cali);
 
     if(feature_enabled)
     {
@@ -333,21 +362,12 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
 
         // 计算 每个点所在的 ring.  add by ln 20230304.
         // if there no ring  in original pointclud , we will compute it; 
-        static int RING_ID_MAP_16[] = { 0, 1, 2, 3, 4, 5, 6, 7, 15, 14, 13, 12, 11, 10, 9, 8 };
         double heigh_angle = atan2(added_pt.z,  std::sqrt(added_pt.x * added_pt.x + added_pt.y * added_pt.y)  ) * 57.2957;
         layer = RING_ID_MAP_16[int( (heigh_angle + 15.0) / 2.0 + 0.5 )]; //计算点 所在的 ring，参考 r2live里面的 特征提取
-        if (layer >= N_SCANS) continue;
-
-        // if(added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z > blind)
-        float range_temp_sqrt =added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z ;
-        if(range_temp_sqrt < blind * blind || range_temp_sqrt > max_blind * max_blind) // max_blind 认为是 雷达的有效探测范围
-        {
-          continue;
-        }
-
+        
         if (is_first[layer])
         {
-          // printf("layer: %d; is first: %d", layer, is_first[layer]);
+            // printf("layer: %d; is first: %d", layer, is_first[layer]);
             yaw_fp[layer]=yaw_angle;
             is_first[layer]=false;
             added_pt.curvature = 0.0;
@@ -370,8 +390,22 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
         if (added_pt.curvature < time_last[layer])  added_pt.curvature+=360.0/omega_l;
 
         yaw_last[layer] = yaw_angle;
-        time_last[layer]=added_pt.curvature;
+        time_last[layer] = added_pt.curvature;
 
+        float range_temp_sqrt =added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z ;
+        if(range_temp_sqrt < blind * blind || range_temp_sqrt > max_blind * max_blind) // max_blind 认为是 雷达的有效探测范围
+        {
+          continue;
+        }
+        // if (added_pt.z  < -1.0) 
+        // {
+        //   continue;
+        // }
+        // if (added_pt.z  < -1.1)
+        // {
+        //   pl_buff[layer].points.push_back(added_pt);
+        //   continue;
+        // }
         pl_buff[layer].points.push_back(added_pt);
       }
 
@@ -411,7 +445,8 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
         added_pt.normal_x = 0;
         added_pt.normal_y = 0;
         added_pt.normal_z = 0;
-        layer=pl_orig.points[i].ring;
+        // layer=pl_orig.points[i].ring;
+        // if (layer >= N_SCANS) continue;
         added_pt.x = pl_orig.points[i].x;
         added_pt.y = pl_orig.points[i].y;
         added_pt.z = pl_orig.points[i].z;
@@ -419,9 +454,14 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
         
         double yaw_angle = atan2(added_pt.y, added_pt.x) * 57.2957;
 
+        // 计算 每个点所在的 ring.  add by ln 20230304.
+        // if there no ring  in original pointclud , we will compute it; 
+        double heigh_angle = atan2(added_pt.z,  std::sqrt(added_pt.x * added_pt.x + added_pt.y * added_pt.y)  ) * 57.2957;
+        layer = RING_ID_MAP_16[int( (heigh_angle + 15.0) / 2.0 + 0.5 )]; //计算点 所在的 ring，参考 r2live里面的 特征提取
+        
         if (is_first[layer])
         {
-          // printf("layer: %d; is first: %d", layer, is_first[layer]);
+            // printf("layer: %d; is first: %d", layer, is_first[layer]);
             yaw_fp[layer]=yaw_angle;
             is_first[layer]=false;
             added_pt.curvature = 0.0;
@@ -444,21 +484,20 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
         if (added_pt.curvature < time_last[layer])  added_pt.curvature+=360.0/omega_l;
 
         yaw_last[layer] = yaw_angle;
-        time_last[layer]=added_pt.curvature;
+        time_last[layer] = added_pt.curvature;
 
         // if(i==(plsize-1))  printf("index: %d layer: %d, yaw: %lf, offset-time: %lf, condition: %d\n", i, layer, yaw_angle, added_pt.curvature, prints);
         if (i % point_filter_num == 0)
         {
-          // if(added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z > blind)
-          float range_temp_sqrt =added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z;
-          if(range_temp_sqrt > blind * blind && range_temp_sqrt < max_blind * max_blind) // max_blind 认为是 雷达的有效探测范围
+          double heigh_angle = atan2(added_pt.z,  std::sqrt(added_pt.x * added_pt.x + added_pt.y * added_pt.y)  ) * 57.2957;
+          layer = RING_ID_MAP_16[int( (heigh_angle + 15.0) / 2.0 + 0.5 )]; //计算点 所在的 ring，参考 r2live里面的 特征提取
+  
+          float range_temp_sqrt =added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z ;
+          if(range_temp_sqrt < blind * blind || range_temp_sqrt > max_blind * max_blind) // max_blind 认为是 雷达的有效探测范围
           {
-            // if (added_pt.x < 0 and added_pt.y > -0.3)
-            // {
-            //   continue;
-            // }
-              pl_surf.points.push_back(added_pt);
+            continue;
           }
+          pl_surf.points.push_back(added_pt);
         }
       }
     }

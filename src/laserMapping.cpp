@@ -504,7 +504,7 @@ void img_cbk(const sensor_msgs::ImageConstPtr& msg)
     }
 
     // 控制图像的频率
-    if( std::fabs( msg->header.stamp.toSec() - last_timestamp_img )<= 1.0 / img_rate)
+    if( std::fabs( msg->header.stamp.toSec() - last_timestamp_img ) <= 1.0 / ( img_rate * 1.2 )  )
     {
         return ;
     }
@@ -520,7 +520,7 @@ void img_cbk(const sensor_msgs::ImageConstPtr& msg)
     // cout<<"Lidar_buff.size()"<<lidar_buffer.size()<<endl;
     // cout<<"Imu_buffer.size()"<<imu_buffer.size()<<endl;
     img_buffer.push_back(getImageFromMsg(msg));
-    img_time_buffer.push_back(msg->header.stamp.toSec());
+    img_time_buffer.push_back( msg->header.stamp.toSec() );
     last_timestamp_img = msg->header.stamp.toSec();
     // cv::imshow("img", img);
     // cv::waitKey(1);
@@ -1352,8 +1352,8 @@ int main(int argc, char** argv)
 
 
     // v2
-    p_imu->set_gyr_bias_cov(V3D(5.4948744932339505e-07 , 1.1750347349853966e-06 , 1.1684096702078937e-06) );
-    p_imu->set_acc_bias_cov(V3D(2.1929344253106320e-05 , 2.0210764440116047e-05 , 1.8900191051348907e-05) );
+    // p_imu->set_gyr_bias_cov(V3D(5.4948744932339505e-07 , 1.1750347349853966e-06 , 1.1684096702078937e-06) );
+    // p_imu->set_acc_bias_cov(V3D(2.1929344253106320e-05 , 2.0210764440116047e-05 , 1.8900191051348907e-05) );
 
 
     #ifndef USE_IKFOM
@@ -1957,13 +1957,12 @@ int main(int argc, char** argv)
     surf_points = *featsFromMap;
     // fout_out.close();
     // fout_pre.close();
-    ROS_INFO("surf_points.size() %d . corner_points.size() %d", surf_points.size(), corner_points.size());
-    // if (surf_points.size() > 0 && corner_points.size() > 0) 
-    if (surf_points.size() > 0 ) 
+    ROS_INFO("feats_undistort.size() %d . corner_points.size() %d", feats_undistort->size(), corner_points.size());
+    if (feats_undistort->size() > 0 ) 
     {
     pcl::PCDWriter pcd_writer;
     cout << "saving...";
-    pcd_writer.writeBinary(surf_filename, surf_points);
+    pcd_writer.writeBinary(surf_filename, *feats_undistort);
     // pcd_writer.writeBinary(corner_filename, corner_points);
     }
 
