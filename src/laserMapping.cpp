@@ -65,6 +65,8 @@
 #include <opencv2/opencv.hpp>
 #include <vikit/camera_loader.h>
 #include"lidar_selection.h"
+#include <std_msgs/Empty.h>
+
 
 #ifdef USE_ikdtree
     #ifdef USE_ikdforest
@@ -964,6 +966,9 @@ void publish_lidar_pose(const ros::Publisher & pose_publisher)
     Eigen::Vector3d T_lidar = state.rot_end * Lidar_offset_to_IMU + state.pos_end; //平移 分量
     Eigen::Matrix3d R_lidar = state.rot_end * Lidar_offset_to_IMU_extrinsic_R ;    //旋转 分量 
 
+    // Eigen::Vector3d T_lidar =   state.pos_end;    //平移 分量
+    // Eigen::Matrix3d R_lidar = state.rot_end  ;    //旋转 分量 
+
     Eigen::Quaterniond R_lidar_quat(R_lidar);
     R_lidar_quat.normalize();
 
@@ -1238,6 +1243,26 @@ void readParameters(ros::NodeHandle &nh)
     nh.param<double>("ncc_thre", ncc_thre, 100);
 }
 
+void save_global_map_cbk(const std_msgs::EmptyConstPtr &msg)
+{
+  ROS_WARN_STREAM( "get single to  save global map ...... " << std::endl);
+  if (!featsFromMap->points.empty())
+  {
+    std::cout << "start save global map ...... " << std::endl;
+    auto points = *featsFromMap;
+    points.height = 1;
+    points.width = featsFromMap->points.size();
+    pcl::io::savePCDFile("/home/map/map_global.pcd", points);
+    // pcl::PCDWriter pcd_writer;
+    // cout << "saving...";
+    // pcd_writer.writeBinary("/home/map/map_global.pcd", *featsFromMap);
+    ROS_WARN_STREAM( "end save global map ,size is: " << featsFromMap->points.size() << std::endl ); 
+  }
+  else{
+    ROS_ERROR("global map is empty. exit......");
+  }
+}
+
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "laserMapping");
@@ -1259,6 +1284,9 @@ int main(int argc, char** argv)
     }
     ros::Subscriber sub_imu = nh.subscribe(imu_topic, 200000, imu_cbk);
     ros::Subscriber sub_img = nh.subscribe(img_topic, 200000, img_cbk);
+
+    ros::Subscriber save_global_map = nh.subscribe("/save_map", 10, save_global_map_cbk);
+
     image_transport::Publisher img_pub = it.advertise("/rgb_img", 1);
     ros::Publisher pubLaserCloudFullRes = nh.advertise<sensor_msgs::PointCloud2>
             ("/cloud_registered", 100);
@@ -1590,7 +1618,7 @@ int main(int argc, char** argv)
         }
 
     #ifdef USE_ikdtree
-        if(0)
+        if(1) //发布全局地图
         {
             PointVector ().swap(ikdtree.PCL_Storage);
             ikdtree.flatten(ikdtree.Root_Node, ikdtree.PCL_Storage, NOT_RECORD);
@@ -1906,7 +1934,7 @@ int main(int argc, char** argv)
         publish_frame_world(pubLaserCloudFullRes);
         // publish_visual_world_map(pubVisualCloud);
         publish_effect_world(pubLaserCloudEffect);
-        // publish_map(pubLaserCloudMap);
+        publish_map(pubLaserCloudMap);
         publish_path(pubPath);
         #ifdef DEPLOY
         publish_mavros(mavros_pose_publisher);
@@ -1957,7 +1985,7 @@ int main(int argc, char** argv)
     surf_points = *featsFromMap;
     // fout_out.close();
     // fout_pre.close();
-    ROS_INFO("feats_undistort.size() %d . corner_points.size() %d", feats_undistort->size(), corner_points.size());
+    // ROS_INFO("feats_undistort.size() %d . corner_points.size() %d", feats_undistort->size(), corner_points.size());
     if (feats_undistort->size() > 0 ) 
     {
     pcl::PCDWriter pcd_writer;

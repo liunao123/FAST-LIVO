@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(fast_livo)
 
-SET(CMAKE_BUILD_TYPE "Debug")
+# SET(CMAKE_BUILD_TYPE "debug")
+SET(CMAKE_BUILD_TYPE "RELEASE")
+# SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
 
 ADD_COMPILE_OPTIONS(-std=c++14 )
 ADD_COMPILE_OPTIONS(-std=c++14 )
@@ -46,6 +48,7 @@ find_path(MATPLOTLIB_CPP_INCLUDE_DIRS "matplotlibcpp.h")
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   nav_msgs
+  std_msgs
   sensor_msgs
   roscpp
   rospy
@@ -109,7 +112,8 @@ add_library(vio src/lidar_selection.cpp
                 )
 add_executable(fastlivo_mapping src/laserMapping.cpp 
                                 src/IMU_Processing.cpp
-                                src/preprocess.cpp
+                                # src/preprocess.cpp
+                                src/preprocess_use_rs_time.cpp
                                 )
 target_link_libraries(fastlivo_mapping ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PYTHON_LIBRARIES} vio ikdtree)
 target_include_directories(fastlivo_mapping PRIVATE ${PYTHON_INCLUDE_DIRS})
