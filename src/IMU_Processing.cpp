@@ -187,19 +187,31 @@ void ImuProcess::IMU_init(const MeasureGroup &meas, StatesGroup &state_inout, in
   state_inout.gravity = - mean_acc / mean_acc.norm() * G_m_s2;
   
   state_inout.rot_end = Eye3d; // Exp(mean_acc.cross(V3D(0, 0, -1 / scale_gravity)));
-  state_inout.bias_g  = mean_gyr;
+  // state_inout.bias_g  = mean_gyr;
 
-  // v1
-  // cout<<"cov_acc: "<< cov_acc <<endl;
-  // cout<<"cov_gyr: "<< cov_gyr <<endl;
-  // state_inout.bias_g  = V3D(4.7157402991064573e-05, 2.2978607798053355e-05, 2.1783118083287548e-05);
-  // cov_acc = V3D(2.0259191796012588e-02, 2.1399993219216693e-02, 2.0015146318205921e-02 );
+  cout<<"193 cov_acc: "<< cov_acc <<endl;
+  cout<<"193 cov_gyr: "<< cov_gyr <<endl;
+  cout<<"193 mean_gyr: "<< mean_gyr <<endl;
+  cout<<"state_inout.gravity: "<< state_inout.gravity <<endl;
+
+    // v1
   // cov_gyr = V3D(3.6806968082877308e-03, 3.3074486920622384e-03, 1.6674201356901494e-03 );
+  // cov_acc = V3D(2.0259191796012588e-02, 2.1399993219216693e-02, 2.0015146318205921e-02 );
+  // state_inout.bias_g  = V3D(4.7157402991064573e-05, 2.2978607798053355e-05, 2.1783118083287548e-05) * 40;
 
-  // v2 0306 重新标定 
-  state_inout.bias_g  = V3D(5.4948744932339505e-07 , 1.1750347349853966e-06,  1.1684096702078937e-06); 
-  cov_gyr = V3D(5.8591807220402780e-05 , 5.6768594514768940e-05, 6.3940101951102265e-05);
-  cov_acc = V3D(5.0349683140255778e-04 , 4.2914934657991096e-04, 5.2044122034212179e-04);
+    // v2 0306__3h 重新标定 
+    // acc_cov_scale: 14  ok
+    // gyr_cov_scale: 14 
+  // cov_gyr = V3D(5.8591807220402780e-05 , 5.6768594514768940e-05, 6.3940101951102265e-05) ;
+  // cov_acc = V3D(5.0349683140255778e-04 , 4.2914934657991096e-04, 5.2044122034212179e-04) ;
+  // state_inout.bias_g  = V3D(5.4948744932339505e-07 , 1.1750347349853966e-06,  1.1684096702078937e-06) * 35 ; 
+
+    // v2 0309__14h 重新标定 
+    // acc_cov_scale: 14  ok
+    // gyr_cov_scale: 14 
+  cov_gyr = V3D(5.9375894969716907e-05, 6.1513521373993531e-05, 7.0664793813297267e-05) ;
+  cov_acc = V3D(5.0138218466202523e-04, 3.9844918634879056e-04, 4.8531828258204087e-04) ;
+  state_inout.bias_g  = V3D(2.5318221737483319e-07, 4.8888885068353970e-07, 4.6015261433510239e-07) * 350 ; // * 35 
 
   last_imu_ = meas.imu.back();
 }
@@ -781,7 +793,15 @@ void ImuProcess::UndistortPcl(LidarMeasureGroup &lidar_meas, StatesGroup &state_
   last_imu_ = v_imu.back();
   last_lidar_end_time_ = pcl_end_time;
 
+  M3D tttt_R(M3D::Identity());
+
+  std::vector<double> v = { 0.999901 , 0.013091 ,-0.005085,
+                   -0.013061 , 0.999897 , 0.005917, 
+                   0.005162 , -0.005850 , 0.999970  };
+  tttt_R << MAT_FROM_ARRAY( v );
+
   auto pos_liD_e = state_inout.pos_end + state_inout.rot_end * Lid_offset_to_IMU;
+
   // auto R_liD_e   = state_inout.rot_end * Lidar_R_to_IMU;
   
   // cout<<"[ IMU Process ]: vel "<<state_inout.vel_end.transpose()<<" pos "<<state_inout.pos_end.transpose()<<" ba"<<state_inout.bias_a.transpose()<<" bg "<<state_inout.bias_g.transpose()<<endl;
@@ -795,6 +815,9 @@ void ImuProcess::UndistortPcl(LidarMeasureGroup &lidar_meas, StatesGroup &state_
   //   cout<<"Undistorted pcl_out.size: "<<pcl_out.size()
   //          <<"lidar_meas.size: "<<lidar_meas.lidar->points.size()<<endl;
     if (pcl_out.points.size()<1) return;
+
+  // pcl::io::savePCDFileASCII("/home/map/distorted_1423.pcd", pcl_out );
+
   /*** undistort each lidar point (backward propagation) ***/
   auto it_pcl = pcl_out.points.end() - 1;
   for (auto it_kp = IMUpose.end() - 1; it_kp != IMUpose.begin(); it_kp--)
@@ -830,6 +853,7 @@ void ImuProcess::UndistortPcl(LidarMeasureGroup &lidar_meas, StatesGroup &state_
       if (it_pcl == pcl_out.points.begin()) break;
     }
   }
+  // pcl::io::savePCDFileASCII("/home/map/Undistorted_1425.pcd", pcl_out);
 }
 
 void ImuProcess::Process2(LidarMeasureGroup &lidar_meas, StatesGroup &stat, PointCloudXYZI::Ptr cur_pcl_un_)
