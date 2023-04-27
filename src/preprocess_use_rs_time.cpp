@@ -297,6 +297,8 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
 
   pcl::fromROSMsg(*msg, pl_orig);
     // ROS_ERROR("pl_orig->size()is %d",  pl_orig.size());
+  // ROS_WARN("first, last , msg->header.stamp.toSec() : %f . %f. %f ", pl_orig.points[0].timestamp , pl_orig.points.back().timestamp , msg->header.stamp.toSec());
+  auto first_point_time = pl_orig.points[0].timestamp;
 
   // 根据索引把 nan 去掉
   pcl::PointCloud<pcl::PointXYZ> pl_orig_xyz;
@@ -362,7 +364,7 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
 
         // time off 
         // * 1000 是 后面 / 1000 了。。 为了与velodyne的代码兼容
-        added_pt.curvature = ( pl_orig.points[i].timestamp - msg->header.stamp.toSec() ) * 1000.0 ;
+        added_pt.curvature = ( pl_orig.points[i].timestamp - first_point_time  ) * 1000.0 ;
         // ROS_WARN("pl_orig.points[i].timestamp - msg->header.stamp.toSec() : %f . %f ", pl_orig.points[i].timestamp , msg->header.stamp.toSec());
 
         float range_temp_sqrt =added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z ;
@@ -431,7 +433,7 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
 
         // time off 
         // * 1000 是 后面 / 1000 了。。 为了与velodyne的代码兼容
-        added_pt.curvature = ( pl_orig.points[i].timestamp - msg->header.stamp.toSec() ) * 1000.0 ;
+        added_pt.curvature = ( pl_orig.points[i].timestamp - first_point_time  ) * 1000.0 ;
 
         float range_temp_sqrt =added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z ;
         if(range_temp_sqrt < blind * blind || range_temp_sqrt > max_blind * max_blind) // max_blind 认为是 雷达的有效探测范围
@@ -441,18 +443,10 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
 
         pl_surf.points.push_back(added_pt);
 
-        // if (pl_surf.points.size() % 10000 == 0)
-        // {
-        // // ROS_WARN("pl_orig.points[i].timestamp - msg->header.stamp.toSec() : %f . %f ", pl_orig.points[i].timestamp , msg->header.stamp.toSec());
-        // // ROS_WARN("added_pt.curvature : %f .  ", added_pt.curvature );
-        // }
-
       }
 
     }
-
-
-    
+        
     // pub_func(pl_surf, pub_full, msg->header.stamp);
     // pub_func(pl_surf, pub_surf, msg->header.stamp);
     // pub_func(pl_surf, pub_corn, msg->header.stamp);
