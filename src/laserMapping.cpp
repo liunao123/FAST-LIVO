@@ -100,6 +100,7 @@ condition_variable sig_buffer;
 M3D Lidar_offset_to_IMU_extrinsic_R(M3D::Identity());
 int img_rate = 10;
 string lidar_frame = "livox";
+double bag_duration_time = 100;
 
 string root_dir = ROOT_DIR;
 string map_file_path, lid_topic, imu_topic, img_topic, config_file;;
@@ -479,6 +480,10 @@ void imu_cbk(const sensor_msgs::Imu::ConstPtr &msg_in)
         flg_reset = true;
     }
 
+    if (timestamp - last_timestamp_imu > 0.05)
+    {
+        ROS_ERROR("imu time jap gt 0.05s ------------------------------------%lf at %lf---------------------------------------------", timestamp - last_timestamp_imu, timestamp);
+    }
     last_timestamp_imu = timestamp;
 
     imu_buffer.push_back(msg);
@@ -493,11 +498,52 @@ cv::Mat getImageFromMsg(const sensor_msgs::ImageConstPtr& img_msg) {
   return img;
 }
 
+bool img_is_vaild(const cv::Mat image, const int threshold_gray = 240 , const double threshold_percent = 0.8 )// 阈值
+{
+    // 转换为灰度图像
+    cv::Mat gray;
+    cv::cvtColor(image, gray, cv::COLOR_BGR2GRAY);
+    
+    // 统计亮度值大于阈值的像素点
+    cv::Mat result = cv::Mat::zeros(image.size(), image.type());
+    int cnts = 0;
+    for(int i = 0; i < gray.rows; i++)
+    {
+        for(int j = 0; j < gray.cols; j++)
+        {
+            if(gray.at<uchar>(i, j) > threshold_gray)
+            {
+                result.at<cv::Vec3b>(i, j) = image.at<cv::Vec3b>(i, j);
+                cnts++;
+            }
+        }
+    }
+    cout << " cnts is:" << cnts << "  . total is " << gray.rows * gray.cols << endl;
+    double percent = 1.0 * cnts / (1.0 * gray.rows * gray.cols) ;
+    std::cout << "vaild percent is :" << 1 - percent << endl;
+    // 保存结果图片
+
+    if(percent > threshold_percent)
+    {
+        static int img_cnts = 1;
+        cv::imwrite( "/home/map/test/" + std::to_string(img_cnts++) + ".jpg", result);
+        return false;
+    }
+    return true;
+}
+
 void img_cbk(const sensor_msgs::ImageConstPtr& msg)
 {
     // cout<<"In Img_cbk"<<endl;
     // if (first_img_time<0 && time_buffer.size()>0) {
     //     first_img_time = msg->header.stamp.toSec() - time_buffer.front();
+    // }
+
+    // cv::Mat temp_img = getImageFromMsg(msg);
+    // if (!img_is_vaild(temp_img))
+    // {
+    //     ROS_ERROR("img is NOT vaild, return ...");
+    //     return;
     // }
 
     if (!img_en) 
@@ -920,12 +966,12 @@ void set_posestamp(T & out)
     out.orientation.w = geoQuat.w;
 }
 
-void publish_odometry(const ros::Publisher & pubOdomAftMapped)
+void publish_odometry(const ros::Publisher & pubOdomAftMapped, const double timestamp)
 {
-    // ROS_ERROR("last_timestamp_lidar %f", last_timestamp_lidar);
+
     odomAftMapped.header.frame_id = "world";
     odomAftMapped.child_frame_id = "imu";
-    odomAftMapped.header.stamp = ros::Time().fromSec(last_timestamp_lidar); // ros::Time::now();
+    odomAftMapped.header.stamp = ros::Time().fromSec(timestamp); // ros::Time::now();
     set_posestamp(odomAftMapped.pose.pose);
     // odomAftMapped.twist.twist.linear.x = state_point.vel(0);
 // odomAftMapped.twist.twist.linear.y = state_point.vel(1);
@@ -942,17 +988,17 @@ void publish_odometry(const ros::Publisher & pubOdomAftMapped)
     lio_path_file.open("/home/map/fast_livo_body_path.txt", ios::app);
     lio_path_file.setf(ios::fixed, ios::floatfield);
     lio_path_file.precision(10);
-    lio_path_file << last_timestamp_lidar << " ";
+    lio_path_file << timestamp << " ";
     lio_path_file.precision(5);
 
     lio_path_file
-        << state.pos_end.x() << " "
-        << state.pos_end.y() << " "
-        << state.pos_end.z() << " "
-        << geoQuat.x << " "
-        << geoQuat.y << " "
-        << geoQuat.z << " "
-        << geoQuat.w << endl;
+        << odomAftMapped.pose.pose.position.x << " "
+        << odomAftMapped.pose.pose.position.y << " "
+        << odomAftMapped.pose.pose.position.z << " "
+        << odomAftMapped.pose.pose.orientation.x << " "
+        << odomAftMapped.pose.pose.orientation.y << " "
+        << odomAftMapped.pose.pose.orientation.z << " "
+        << odomAftMapped.pose.pose.orientation.w << endl;
     lio_path_file.close();
 }
 
@@ -1214,12 +1260,8 @@ void readParameters(ros::NodeHandle &nh)
     nh.param<vector<double>>("mapping/extrinsic_R", extrinR, vector<double>());
     
     Lidar_offset_to_IMU_extrinsic_R << MAT_FROM_ARRAY(extrinR);
-    // Lidar_offset_to_IMU_extrinsic_R << 0.999901 , 0.013091 ,-0.005085,
-    //                -0.013061 , 0.999897 , 0.005917 , 
-    //                0.005162 , -0.005850 , 0.999970 ;
-    // Lidar_offset_to_IMU_extrinsic_R = M3D::Identity();
     
-    std::cout << " Lidar_offset_to_IMU_extrinsic_R : " << std::endl << Lidar_offset_to_IMU_extrinsic_R << std::endl << std::endl;
+    std::cout << __FILE__ <<":" << __LINE__ <<" . Lidar_offset_to_IMU_extrinsic_R : " << std::endl << Lidar_offset_to_IMU_extrinsic_R << std::endl << std::endl;
     V3D ttt;
     ttt << VEC_FROM_ARRAY(extrinT);
     std::cout << " extrinT : " << std::endl << ttt << std::endl << std::endl;
@@ -1359,7 +1401,7 @@ int main(int argc, char** argv)
     lidar_selector->state = &state;
     lidar_selector->state_propagat = &state_propagat;
     lidar_selector->NUM_MAX_ITERATIONS = NUM_MAX_ITERATIONS;
-    lidar_selector->MIN_IMG_COUNT = MIN_IMG_COUNT;
+
     lidar_selector->img_point_cov = IMG_POINT_COV;
     lidar_selector->fx = cam_fx;
     lidar_selector->fy = cam_fy;
@@ -1415,7 +1457,7 @@ int main(int argc, char** argv)
     #endif
 //------------------------------------------------------------------------------------------------------
     signal(SIGINT, SigHandle);
-    ros::Rate rate(5000);
+    ros::Rate rate(1000);
     bool status = ros::ok();
     while (status)
     {
@@ -1424,11 +1466,12 @@ int main(int argc, char** argv)
         if(!sync_packages(LidarMeasures))
         {
             status = ros::ok();
-            cv::waitKey(1);
+            // cv::waitKey(1);
             rate.sleep();
             continue;
         }
 
+        ROS_WARN_ONCE("data  come .... ^_^ ");
         /*** Packaged got ***/
         if (flg_reset)
         {
@@ -1479,7 +1522,7 @@ int main(int argc, char** argv)
 
         if (! LidarMeasures.is_lidar_end) 
         {
-            cout<<"[ LIO ]: Raw feature num: "<<pcl_wait_pub->points.size() << "." << endl;
+            // cout<<"[ LIO ]: Raw feature num: "<<pcl_wait_pub->points.size() << "." << endl;
             if (first_lidar_time<10)
             {
                 continue;
@@ -1487,6 +1530,7 @@ int main(int argc, char** argv)
             // cout<<"cur state:"<<state.rot_end<<endl;
             if (img_en) {
                 euler_cur = RotMtoEuler(state.rot_end);
+                // ROS_WARN_STREAM("eular is " << euler_cur.transpose() << " . vel_end is " << state.vel_end.transpose() );
                 fout_pre << setw(20) << LidarMeasures.last_update_time - first_lidar_time << " " << euler_cur.transpose()*57.3 << " " << state.pos_end.transpose() << " " << state.vel_end.transpose() \
                                 <<" "<<state.bias_g.transpose()<<" "<<state.bias_a.transpose()<<" "<<state.gravity.transpose()<< endl;
                 
@@ -1542,11 +1586,12 @@ int main(int argc, char** argv)
                 // lidar_selector->detect(LidarMeasures.measures.back().img, feats_down_world);
                 // p_imu->push_update_state(LidarMeasures.measures.back().img_offset_time, state);
                 geoQuat = tf::createQuaternionMsgFromRollPitchYaw(euler_cur(0), euler_cur(1), euler_cur(2));
-                publish_odometry(pubOdomAftMapped);
         
+                // publish_odometry(pubOdomAftMapped, last_timestamp_img);
                 // publish_lidar_pose(pubLidarPose); //没必要发布这么频繁
 
                 euler_cur = RotMtoEuler(state.rot_end);
+                // ROS_WARN_STREAM("eular is " << euler_cur.transpose() << " . vel_end is " << state.vel_end.transpose() );
                 fout_out << setw(20) << LidarMeasures.last_update_time - first_lidar_time << " " << euler_cur.transpose()*57.3 << " " << state.pos_end.transpose() << " " << state.vel_end.transpose() \
                 <<" "<<state.bias_g.transpose()<<" "<<state.bias_a.transpose()<<" "<<state.gravity.transpose()<<" "<<feats_undistort->points.size()<<endl;
             }
@@ -1731,12 +1776,13 @@ int main(int argc, char** argv)
 
                     VF(4) pabcd;
                     point_selected_surf[i] = false;
-                    if (esti_plane(pabcd, points_near, 0.1f)) //(planeValid)
+                    if (esti_plane(pabcd, points_near, 0.075f)) //(planeValid)
                     {
                         float pd2 = pabcd(0) * point_world.x + pabcd(1) * point_world.y + pabcd(2) * point_world.z + pabcd(3);
                         float s = 1 - 0.9 * fabs(pd2) / sqrt(p_body.norm());
+                        // ROS_ERROR("pd2 %lf , s %lf ", pd2, s );
 
-                        if (s > 0.9)
+                        if (s > 0.90)
                         {
                             point_selected_surf[i] = true;
                             normvec->points[i].x = pabcd(0);
@@ -1847,8 +1893,10 @@ int main(int argc, char** argv)
 
                     rot_add = solution.block<3,1>(0,0);
                     t_add   = solution.block<3,1>(3,0);
-
-                    if ((rot_add.norm() * 57.3 < 0.01) && (t_add.norm() * 100 < 0.015))
+                    // ROS_ERROR("t_add.norm()*100: %lf ", t_add.norm() * 100 );
+                    if ((rot_add.norm() * 57.3 < 0.0035) && (t_add.norm() * 100 < 0.005))
+                    // if ((rot_add.norm() * 57.3 < 0.005) && (t_add.norm() * 100 < 0.008))
+                    // if ((rot_add.norm() * 57.3 < 0.01) && (t_add.norm() * 100 < 0.015))
                     {
                         flg_EKF_converged = true;
                     }
@@ -1896,13 +1944,14 @@ int main(int argc, char** argv)
         }
         
         // cout<<"[ mapping ]: iteration count: "<<iterCount+1<<endl;
+        ROS_WARN("[ mapping ]: iteration count: %d , lidar time is %lf .", iterCount+1, LidarMeasures.lidar_beg_time);
         #endif
         // SaveTrajTUM(LidarMeasures.lidar_beg_time, state.rot_end, state.pos_end);
         double t_update_end = omp_get_wtime();
         /******* Publish odometry *******/
         euler_cur = RotMtoEuler(state.rot_end);
         geoQuat = tf::createQuaternionMsgFromRollPitchYaw(euler_cur(0), euler_cur(1), euler_cur(2));
-        publish_odometry(pubOdomAftMapped);
+        publish_odometry(pubOdomAftMapped, LidarMeasures.lidar_beg_time);
         
         // publish lidar define by liunao 20230206
         publish_lidar_pose(pubLidarPose);
@@ -1962,7 +2011,7 @@ int main(int argc, char** argv)
         s_plot5[time_log_counter] = t5 - t0;
         time_log_counter ++;
         // cout<<"[ mapping ]: time: fov_check "<< fov_check_time <<" fov_check and readd: "<<t1-t0<<" match "<<aver_time_match<<" solve "<<aver_time_solve<<" ICP "<<t3-t1<<" map incre "<<t5-t3<<" total "<<aver_time_consu << "icp:" << aver_time_icp << "construct H:" << aver_time_const_H_time <<endl;
-        printf("[ LIO ]: time: fov_check: %0.6f fov_check and readd: %0.6f match: %0.6f solve: %0.6f  ICP: %0.6f  map incre: %0.6f total: %0.6f icp: %0.6f construct H: %0.6f.\n",fov_check_time,t1-t0,aver_time_match,aver_time_solve,t3-t1,t5-t3,aver_time_consu,aver_time_icp, aver_time_const_H_time);
+        // printf("[ LIO ]: time: fov_check: %0.6f fov_check and readd: %0.6f match: %0.6f solve: %0.6f  ICP: %0.6f  map incre: %0.6f total: %0.6f icp: %0.6f construct H: %0.6f.\n",fov_check_time,t1-t0,aver_time_match,aver_time_solve,t3-t1,t5-t3,aver_time_consu,aver_time_icp, aver_time_const_H_time);
         if (lidar_en)
         {
             euler_cur = RotMtoEuler(state.rot_end);
@@ -1983,6 +2032,14 @@ int main(int argc, char** argv)
 
     PointCloudXYZI surf_points, corner_points;
     surf_points = *featsFromMap;
+
+    std::cout << "start save global map ...... " << std::endl;
+    auto points = *featsFromMap;
+    points.height = 1;
+    points.width = featsFromMap->points.size();
+    if (featsFromMap->points.size() > 0 )
+        pcl::io::savePCDFile("/home/map/map_global.pcd", points);
+        
     // fout_out.close();
     // fout_pre.close();
     // ROS_INFO("feats_undistort.size() %d . corner_points.size() %d", feats_undistort->size(), corner_points.size());
