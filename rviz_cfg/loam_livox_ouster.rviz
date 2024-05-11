@@ -67,8 +67,8 @@ Visualization Manager:
         - Alpha: 0.10000000149011612
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 21.673479080200195
-            Min Value: -1.4422448873519897
+            Max Value: 3.673072576522827
+            Min Value: -0.356693297624588
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -87,7 +87,7 @@ Visualization Manager:
           Size (Pixels): 1
           Size (m): 0.05000000074505806
           Style: Points
-          Topic: /cloud_registered
+          Topic: /map_update_data
           Unreliable: true
           Use Fixed Frame: true
           Use rainbow: true
@@ -224,13 +224,9 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        camera:
+        base_link:
           Value: true
-        imu:
-          Value: true
-        velodyne:
-          Value: true
-        world:
+        odom:
           Value: true
       Marker Scale: 1
       Name: TF
@@ -238,11 +234,9 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        world:
-          imu:
-            velodyne:
-              camera:
-                {}
+        odom:
+          base_link:
+            {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -264,7 +258,7 @@ Visualization Manager:
   Global Options:
     Background Color: 0; 0; 0
     Default Light: true
-    Fixed Frame: world
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -288,25 +282,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 58.862972259521484
+      Distance: 60.65380859375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -19.49521255493164
-        Y: 1.3447904586791992
-        Z: -1.1324271326884627e-5
+        X: 3.9276580810546875
+        Y: 0.06460708379745483
+        Z: -9.893759852275252e-6
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.494796872138977
+      Pitch: 0.41479721665382385
       Target Frame: <Fixed Frame>
       Value: ThirdPersonFollower (rviz)
-      Yaw: 3.732213258743286
+      Yaw: 3.3022146224975586
     Saved: ~
 Window Geometry:
   Displays:

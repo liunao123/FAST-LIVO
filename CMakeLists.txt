@@ -64,12 +64,18 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
 )
 
+# set(Sophus_LIBRARIES libSophus.so)
+# set(Sophus_DIR /usr/local/include/sophus)
+set(Sophus_LIBRARIES /usr/local/libSophus.so)
+
+message(--------------Sophus_INCLUDE_DIRS: ${Sophus_INCLUDE_DIRS} )
+message(--------------Sophus_LIBRARIES:  ${Sophus_LIBRARIES} )
+
 find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED)
 FIND_PACKAGE(OpenCV REQUIRED)
-FIND_PACKAGE(Sophus REQUIRED)
+# FIND_PACKAGE(Sophus REQUIRED)
 FIND_PACKAGE(Boost REQUIRED COMPONENTS thread)
-set(Sophus_LIBRARIES libSophus.so)
 
 message(Eigen: ${EIGEN3_INCLUDE_DIR})
 
@@ -115,7 +121,7 @@ add_executable(fastlivo_mapping src/laserMapping.cpp
                                 # src/preprocess.cpp
                                 src/preprocess_use_rs_time.cpp
                                 )
-target_link_libraries(fastlivo_mapping ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PYTHON_LIBRARIES} vio ikdtree)
+target_link_libraries(fastlivo_mapping ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PYTHON_LIBRARIES} vio ikdtree libzlog.a)
 target_include_directories(fastlivo_mapping PRIVATE ${PYTHON_INCLUDE_DIRS})
 
 # add_executable(kd_tree_test include/ikd-Tree/ikd_Tree.cpp src/kd_tree_test.cpp)
