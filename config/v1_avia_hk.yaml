@@ -1,0 +1,65 @@
+localization : false
+feature_extract_enable : false # 只能用 true or false
+point_filter_num : 1
+max_iteration : 20 # 5 for locate
+dense_map_enable : 1
+filter_size_surf : 0.1 # 0.3 不能太小，否则误差会 累计 的很快
+filter_size_map : 0.3  # 0.4
+cube_side_length : 100000
+debug : 0
+grid_size : 50
+patch_size : 16
+img_enable : 1
+lidar_enable : 1
+# outlier_threshold: The outlier threshold value of photometric error (square) of a single pixel. 
+# It is recommended that 50~250 for the darker scenes, 500~1000 for the brighter scenes. 
+# The smaller the value is, the faster the vio submodule is, but the weaker the anti-degradation ability is.
+outlier_threshold : 1500  # 1500
+ncc_en: true
+ncc_thre: 0.5     # 可以控制 sub_sparse_map->errors, 越小，rgb_img上的点越多
+img_point_cov : 1000 # 600 1000
+laser_point_cov : 0.001  #0.001
+
+cam_fx: 625.0441867
+cam_fy: 625.8058200
+cam_cx: 302.6309133
+cam_cy: 246.7821367
+
+common:
+    lid_topic:  /livox/lidar
+    imu_topic:  /livox/imu
+
+preprocess:
+    lidar_type: 1  # Ouster #enum LID_TYPE{AVIA = 1, VELO16, OUST64}; //{1, 2, 3}
+    scan_line: 6
+    blind: 0.50 # blind x m disable
+    max_blind: 50.0 # 2.5m 只包含 坑道内的 点
+
+mapping:
+    acc_cov_scale: 100 #10
+    gyr_cov_scale: 100 #10     sqrt(hz) imu的输出频率
+    fov_degree:  360  #没什么用
+
+    extrinsic_R: [1 , 0 , 0,
+                  0 , 1 , 0,
+                  0 , 0 , 1]
+    extrinsic_T: [ 0.04165, 0.02326, -0.0284 ] # avia
+    T_imu_base: [0.0, 0.0, 0.0] # T_ib   base_link在imu坐标系下的位置 只考虑平移
+
+camera:
+    img_topic: /hk_camera/image_color
+    # img_rate: 10 #自定义，对图像的频率进行控制
+ 
+
+    #  5 pcd
+    # Rcl: [ 0.03015720 , -0.9994150 , -0.01614490,
+    #        0.00784056 ,  0.0163883 , -0.99983500,
+    #        0.99951400 ,  0.0300256 ,  0.00833019]
+    # # Pcl: [ -0.0145161 , -0.1456110 , -0.00159719]
+    # Pcl: [ -0.0145161 , -0.20 , -0.00159719]
+
+    #  3 pcd
+    Rcl: [ 0.02947870 , -0.9994970 , -0.01171570,
+           0.00847185 ,  0.0119702 , -0.99989200,
+           0.99953000 ,  0.0293763 ,  0.00882045]
+    Pcl: [-0.014989 , -0.142427 , -0.0195136]

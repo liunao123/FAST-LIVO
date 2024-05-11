@@ -1,0 +1,13 @@
+cam_model: Pinhole
+cam_width: 612
+cam_height: 512
+
+# 平均值
+cam_fx: 625.0441867
+cam_fy: 625.8058200
+cam_cx: 302.6309133
+cam_cy: 246.7821367
+cam_d0: -0.114957667 
+cam_d1: 0.2112790000 
+cam_d2: -0.000874000 
+cam_d3: -0.001598667 
