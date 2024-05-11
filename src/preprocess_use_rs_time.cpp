@@ -4,22 +4,13 @@
 #include <pcl/point_cloud.h>
 #include <pcl/pcl_macros.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <pcl/filters/radius_outlier_removal.h>
+
+#include <math.h>
 
 #define RETURN0     0x00
 #define RETURN0AND1 0x10
 
-struct RsPointXYZIRT
-{
-  PCL_ADD_POINT4D;
-  float intensity;
-  // PCL_ADD_INTENSITY;
-  uint16_t ring = 0;
-  double timestamp = 0;
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-} EIGEN_ALIGN16;
-
-POINT_CLOUD_REGISTER_POINT_STRUCT(RsPointXYZIRT,
-                                  (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(uint16_t, ring, ring)(double, timestamp, timestamp))
 
 
 Preprocess::Preprocess()
@@ -62,7 +53,16 @@ void Preprocess::set(bool feat_en, int lid_type, double bld, int pfilt_num)
 void Preprocess::process(const livox_ros_driver::CustomMsg::ConstPtr &msg, PointCloudXYZI::Ptr &pcl_out)
 {  
   avia_handler(msg);
+  
   *pcl_out = pl_surf;
+
+  // static pcl::RadiusOutlierRemoval< PointType > outrem;
+	// outrem.setInputCloud(pcl_out);
+	// outrem.setRadiusSearch(0.5);
+	// outrem.setMinNeighborsInRadius(5);
+	// // apply filter
+	// outrem.filter(*pcl_out);
+
 }
 
 void Preprocess::process(const sensor_msgs::PointCloud2::ConstPtr &msg, PointCloudXYZI::Ptr &pcl_out)
@@ -70,12 +70,13 @@ void Preprocess::process(const sensor_msgs::PointCloud2::ConstPtr &msg, PointClo
   switch (lidar_type)
   {
   case OUST64:
+    ROS_WARN_ONCE("------------------------OUST64");
     oust64_handler(msg);
     break;
 
   case VELO16:
   {
-    // printf("------------------------VELO16");
+    ROS_WARN_ONCE("------------------------VELO16");
     velodyne_handler(msg);
     break;
   }
@@ -85,6 +86,14 @@ void Preprocess::process(const sensor_msgs::PointCloud2::ConstPtr &msg, PointClo
     break;
   }
   *pcl_out = pl_surf;
+  
+  // static pcl::RadiusOutlierRemoval< PointType > outrem;
+	// outrem.setRadiusSearch(0.5);
+	// outrem.setMinNeighborsInRadius(3);
+	// outrem.setInputCloud(pcl_out);
+	// // apply filter
+	// outrem.filter(*pcl_out);
+
 }
 
 void Preprocess::avia_handler(const livox_ros_driver::CustomMsg::ConstPtr &msg)
@@ -104,35 +113,47 @@ void Preprocess::avia_handler(const livox_ros_driver::CustomMsg::ConstPtr &msg)
   {
     pl_buff[i].clear();
     pl_buff[i].reserve(plsize);
-  }
+  } 
 
   if (feature_enabled)
   {
     for(uint i=1; i<plsize; i++)
     {
-        if((abs(msg->points[i].x - msg->points[i-1].x) < 1e-8) 
-            || (abs(msg->points[i].y - msg->points[i-1].y) < 1e-8)
-            || (abs(msg->points[i].z - msg->points[i-1].z) < 1e-8)
-            || (msg->points[i].x * msg->points[i].x + msg->points[i].y * msg->points[i].y < blind)
-            || (msg->points[i].line > N_SCANS)
-            || ((msg->points[i].tag & 0x30) != RETURN0AND1))
+
+      if (   (msg->points[i].line < N_SCANS) // && 
+          // ( (msg->points[i].tag & 0x30) == 0x10 || (msg->points[i].tag & 0x30) == 0x00 )
+         )
+      {
+        if(  ( ( msg->points[ i ].tag & 0x03 ) != 0x00 ) ||  ( ( msg->points[ i ].tag & 0x0C ) != 0x00 ) ) 
         {
-            continue;
+          continue;
+        }
+        // if( msg->points[i].z < -1.0 )
+        // {
+        //   continue;
+        // }
+        
+        if ( msg->points[i].z * msg->points[i].z + msg->points[i].y * msg->points[i].y + msg->points[i].x * msg->points[i].x > max_blind * max_blind)
+        {
+          continue;
         }
 
-        pl_full[i].x = msg->points[i].x;
-        pl_full[i].y = msg->points[i].y;
-        pl_full[i].z = msg->points[i].z;
-        pl_full[i].intensity = msg->points[i].reflectivity;
-        pl_full[i].curvature = msg->points[i].offset_time / float(1000000); //use curvature as time of each laser points
+        if (   
+             (std::abs(  msg->points[i].x - msg->points[i - 1].x) > 1e-7) 
+            || (std::abs(msg->points[i].y - msg->points[i - 1].y) > 1e-7) 
+            || (std::abs(msg->points[i].z - msg->points[i - 1].z) > 1e-7) 
+            && 
+            (pl_full[i].z * pl_full[i].z + pl_full[i].y * pl_full[i].y + pl_full[i].x * pl_full[i].x) > blind * blind )
+        {
+          pl_full[i].x = msg->points[i].x;
+          pl_full[i].y = msg->points[i].y;
+          pl_full[i].z = msg->points[i].z;
+          pl_full[i].intensity = msg->points[i].reflectivity;
+          pl_full[i].curvature = msg->points[i].offset_time / float(1000000); // use curvature as time of each laser points
+          pl_buff[msg->points[i].line].push_back(pl_full[i]);
+        }
+      }
 
-      // 利用强度来区分 车辆 上的点 testing 0301
-      // if (pl_full[i].intensity <= 40 &&  pl_full[i].z > -1.0 )
-      // {
-      //   continue;
-      // }
-
-        pl_buff[msg->points[i].line].push_back(pl_full[i]);
     }
 
     for(int j=0; j<N_SCANS; j++)
@@ -141,6 +162,7 @@ void Preprocess::avia_handler(const livox_ros_driver::CustomMsg::ConstPtr &msg)
       if(pl_buff[j].size() <= 5) continue;
       pcl::PointCloud<PointType> &pl = pl_buff[j];
       plsize = pl.size();
+      // printf("plsize: %d \n", plsize);
       vector<orgtype> &types = typess[j];
       types.clear();
       types.resize(plsize);
@@ -164,11 +186,25 @@ void Preprocess::avia_handler(const livox_ros_driver::CustomMsg::ConstPtr &msg)
         if((abs(msg->points[i].x - msg->points[i-1].x) < 1e-8) 
             || (abs(msg->points[i].y - msg->points[i-1].y) < 1e-8)
             || (abs(msg->points[i].z - msg->points[i-1].z) < 1e-8)
-            || (msg->points[i].x * msg->points[i].x + msg->points[i].y * msg->points[i].y < blind)
+            || (msg->points[i].x * msg->points[i].x + msg->points[i].y * msg->points[i].y + msg->points[i].z * msg->points[i].z < blind * blind)
             || (msg->points[i].line > N_SCANS)
             || ((msg->points[i].tag & 0x30) != RETURN0AND1))
         {
             continue;
+        }
+        
+        if(  ( ( msg->points[ i ].tag & 0x03 ) != 0x00 ) ||  ( ( msg->points[ i ].tag & 0x0C ) != 0x00 )  ) 
+        {
+          continue;
+        }
+        // if ( msg->points[i].z < -1.0 )
+        // {
+        //   continue;
+        // }
+
+        if ( msg->points[i].z * msg->points[i].z + msg->points[i].y * msg->points[i].y + msg->points[i].x * msg->points[i].x > max_blind * max_blind)
+        {
+          continue;
         }
 
         effect_ind ++;
@@ -184,6 +220,7 @@ void Preprocess::avia_handler(const livox_ros_driver::CustomMsg::ConstPtr &msg)
         }
     }
   }
+  // ROS_WARN(" pl_surf size: %ld ",pl_surf.size() );
   // printf("feature extraction time: %lf \n", omp_get_wtime()-t1);
 }
 
@@ -194,6 +231,13 @@ void Preprocess::oust64_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
   pl_full.clear();
   pcl::PointCloud<ouster_ros::Point> pl_orig;
   pcl::fromROSMsg(*msg, pl_orig);
+
+  pl_orig.is_dense = false; // 万集的雷达必须加这一句
+  std::vector<int> save_index;
+  // ROS_ERROR("nan pl_orig->size()is %d",  pl_orig.size());
+  pcl::removeNaNFromPointCloud(pl_orig, pl_orig, save_index);
+  // ROS_ERROR("remove nan pl_orig->size()is %d",  pl_orig.size());
+
   uint plsize = pl_orig.size();
   pl_corn.reserve(plsize);
   pl_surf.reserve(plsize);
@@ -287,33 +331,44 @@ void Preprocess::oust64_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
 
 void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
 {
-  // 用原始的 rslidar  。不用 rs_to_velodyne 转
+    // 用原始的 rslidar 不用 rs_to_velodyne 转
     pl_surf.clear();
     pl_corn.clear();
     pl_full.clear();
-    
-  pcl::PointCloud<RsPointXYZIRT> pl_orig ;
-  // pcl::PointCloud<RsPointXYZIRT>::Ptr cloud_undis(new pcl::PointCloud<RsPointXYZIRT>());
 
-  pcl::fromROSMsg(*msg, pl_orig);
-    // ROS_ERROR("pl_orig->size()is %d",  pl_orig.size());
-  // ROS_WARN("first, last , msg->header.stamp.toSec() : %f . %f. %f ", pl_orig.points[0].timestamp , pl_orig.points.back().timestamp , msg->header.stamp.toSec());
-  auto first_point_time = pl_orig.points[0].timestamp;
-
-  // 根据索引把 nan 去掉
-  pcl::PointCloud<pcl::PointXYZ> pl_orig_xyz;
-  pcl::fromROSMsg(*msg, pl_orig_xyz);
-
-  std::vector<int> save_index;
-  pcl::removeNaNFromPointCloud(pl_orig_xyz, pl_orig_xyz, save_index);
-  boost::shared_ptr<std::vector<int>> index_ptr = boost::make_shared<std::vector<int>>(save_index);
+    pcl::PointCloud<RsPointXYZIRT> pl_orig ;
+    // pcl::PointCloud<RsPointXYZIRT>::Ptr cloud_undis(new pcl::PointCloud<RsPointXYZIRT>());
   
-  pcl::ExtractIndices<RsPointXYZIRT> extract;
-  extract.setInputCloud( pl_orig.makeShared() );
-  extract.setIndices(index_ptr);
-  extract.setNegative(false); // 保留 不是 索引的 数据 设置为  true
-  extract.filter(pl_orig);
+    pcl::fromROSMsg(*msg, pl_orig);
+    // ROS_ERROR("pl_orig->size()is %d",  pl_orig.size());
+    // ROS_WARN("first, last , msg->header.stamp.toSec() : %f . %f. %f ", pl_orig.points[0].timestamp , pl_orig.points.back().timestamp , msg->header.stamp.toSec());
+    auto first_point_time = pl_orig.points[0].timestamp;
+    // auto first_point_time = msg->header.stamp.toSec();
 
+    // 根据索引把 nan 去掉
+    // pcl::PointCloud<pcl::PointXYZ> pl_orig_xyz;
+    // pcl::fromROSMsg(*msg, pl_orig_xyz);
+    // // ROS_ERROR("pl_orig->size()is %d",  pl_orig.size());
+  
+    // // wanjee的激光雷达，需要手动去除 nan 点，后面的循环里有判断
+    // // 速腾的雷达可可以去除，vanjee的不行
+    // pl_orig_xyz->is_dense = false;
+    // std::vector<int> save_index;
+    // pcl::removeNaNFromPointCloud(pl_orig_xyz, pl_orig_xyz, save_index);
+    // boost::shared_ptr<std::vector<int>> index_ptr = boost::make_shared<std::vector<int>>(save_index);
+    // // ROS_ERROR("save_index %d",  save_index.size());
+    
+    // pcl::ExtractIndices<RsPointXYZIRT> extract;
+    // extract.setInputCloud( pl_orig.makeShared() );
+    // extract.setIndices(index_ptr);
+    // extract.setNegative(false); // 保留 不是 索引的 数据 设置为  true
+    // extract.filter(pl_orig);
+
+    // 激光雷达，去除 nan 点
+    pl_orig.is_dense = false; // 万集的雷达必须加这一句
+    std::vector<int> save_index;
+    // ROS_ERROR("pl_orig->size()is %d",  pl_orig.size());
+    pcl::removeNaNFromPointCloud(pl_orig, pl_orig, save_index);
     // ROS_ERROR("pl_orig->size()is %d",  pl_orig.size());
 
     uint plsize = pl_orig.size();
@@ -365,10 +420,16 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
         // time off 
         // * 1000 是 后面 / 1000 了。。 为了与velodyne的代码兼容
         added_pt.curvature = ( pl_orig.points[i].timestamp - first_point_time  ) * 1000.0 ;
+        // added_pt.curvature = ( pl_orig.points[i].timestamp - msg->header.stamp.toSec()  ) * 1000.0 ;
         // ROS_WARN("pl_orig.points[i].timestamp - msg->header.stamp.toSec() : %f . %f ", pl_orig.points[i].timestamp , msg->header.stamp.toSec());
 
         float range_temp_sqrt =added_pt.x*added_pt.x+added_pt.y*added_pt.y+added_pt.z*added_pt.z ;
         if(range_temp_sqrt < blind * blind || range_temp_sqrt > max_blind * max_blind) // max_blind 认为是 雷达的有效探测范围
+        {
+          continue;
+        }
+        
+        if ( added_pt.y < -15.0  || added_pt.z  > 5.1  )
         {
           continue;
         }
@@ -401,8 +462,9 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
         types[linesize].range = sqrt(pl[linesize].x * pl[linesize].x + pl[linesize].y * pl[linesize].y);
         give_feature(pl, types);
       }
-      // cout << "-------------saving feature pcd..." << pl_surf.points.size();
-      // pcd_writer.writeBinary("/home/msg_feature.pcd", pl_surf);  
+
+      // cout << "-----------saving feature pcd..." <<  __LINE__ << "         "<< pl_surf.points.size();
+
     }
     else
     {
@@ -419,6 +481,12 @@ void Preprocess::velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
         {
           continue;
         }
+
+        // wanjee的激光雷达，需要手动去除 nan 点
+        // if(std::isnan(pl_orig.points[i].x) || std::isnan(pl_orig.points[i].y) || std::isnan(pl_orig.points[i].z) )
+        // {
+        //   continue;
+        // }
 
         PointType added_pt;
         added_pt.normal_x = 0;

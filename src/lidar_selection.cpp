@@ -365,7 +365,7 @@ void LidarSelector::addFromSparseMap(cv::Mat img, PointCloudXYZI::Ptr pg)
     sub_sparse_map->reset();
     deque< PointPtr >().swap(sub_map_cur_frame_);
 
-    float voxel_size = 0.5;
+    float voxel_size = 0.6;
     
     unordered_map<VOXEL_KEY, float>().swap(sub_feat_map);
     unordered_map<int, Warp*>().swap(Warp_map);
@@ -949,7 +949,8 @@ void LidarSelector::addObservation(cv::Mat img)
             SE3 delta_pose = pose_ref * pose_cur.inverse();
             double delta_p = delta_pose.translation().norm();
             double delta_theta = (delta_pose.rotation_matrix().trace() > 3.0 - 1e-6) ? 0.0 : std::acos(0.5 * (delta_pose.rotation_matrix().trace() - 1));            
-            if(delta_p > 0.5 || delta_theta > 10) add_flag = true;
+            // if(delta_p > 0.5 || delta_theta > 10) add_flag = true;
+            if(delta_p > 0.2 || delta_theta > 5) add_flag = true;
 
             // Step 3: pixel distance
             Vector2d last_px = last_feature->px;
@@ -1007,7 +1008,7 @@ void LidarSelector::display_keypatch(double time)
         V2D pc(new_frame_->w2c(pt->pos_));
         cv::Point2f pf;
         pf = cv::Point2f(pc[0], pc[1]); 
-        if (sub_sparse_map->errors[i]<8000) // 5.5
+        if (sub_sparse_map->errors[i] < 8000) // 5.5
             cv::circle(img_cp, pf, 8, cv::Scalar(0, 255, 0), -1, 8); // Green Sparse Align tracked
         else
             cv::circle(img_cp, pf, 8, cv::Scalar(255, 0, 0), -1, 8); // Blue Sparse Align tracked
