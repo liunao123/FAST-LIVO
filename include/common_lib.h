@@ -30,7 +30,10 @@ using namespace Sophus;
 
 #define print_line std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 #define PI_M (3.14159265358)
-#define G_m_s2 (9.81)         // Gravaty const in GuangDong/China
+// #define G_m_s2 (9.81)         // Gravaty const in GuangDong/China
+#define G_m_s2 ( 9.7949 )         // Gravaty const in Nj/China
+// #define G_m_s2 (9.8015)         // Gravaty const in Xiong An/China
+// #define G_m_s2 ( 9.79134 )         // Gravaty const in langjiu/China
 #define DIM_STATE (18)      // Dimension of states (Let Dim(SO(3)) = 3)
 #define DIM_PROC_N (12)      // Dimension of process noise (Let Dim(SO(3)) = 3)
 #define CUBE_LEN  (6.0)

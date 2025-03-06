@@ -105,11 +105,24 @@ add_library(vio src/lidar_selection.cpp
                 src/point.cpp
                 src/map.cpp
                 )
-add_executable(fastlivo_mapping src/laserMapping.cpp 
-                                src/IMU_Processing.cpp
-                                src/preprocess.cpp
+# add_executable(fastlivo_mapping src/laserMapping.cpp 
+#                                 src/IMU_Processing.cpp
+#                                 src/preprocess.cpp
+#                                 )
+
+add_executable(fastlivo_mapping src/laserMapping_m.cpp 
+                                src/IMU_Processing_fix_imu_error.cpp
+                                src/preprocess_use_rs_time.cpp
                                 )
-target_link_libraries(fastlivo_mapping ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PYTHON_LIBRARIES} vio ikdtree)
-target_include_directories(fastlivo_mapping PRIVATE ${PYTHON_INCLUDE_DIRS})
 
+target_link_libraries(fastlivo_mapping ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PYTHON_LIBRARIES} vio ikdtree libzlog.a)
+target_include_directories(fastlivo_mapping PRIVATE ${PYTHON_INCLUDE_DIRS} )
 
+add_executable(save_registered_cloud src/save_registered_cloud.cpp)
+target_link_libraries(save_registered_cloud ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
+add_executable(feature_extract src/feature_extract.cpp)
+target_link_libraries(feature_extract ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+
+add_executable(livox_to_pointcloud2 src/livox_to_pointcloud2.cpp)
+target_link_libraries(livox_to_pointcloud2 ${catkin_LIBRARIES} ${PCL_LIBRARIES})

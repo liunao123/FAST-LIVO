@@ -2,6 +2,7 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <livox_ros_driver/CustomMsg.h>
+#include <pcl/filters/filter.h> // removeNaNFromPointCloud function 
 
 using namespace std;
 
@@ -10,7 +11,7 @@ using namespace std;
 typedef pcl::PointXYZINormal PointType;
 typedef pcl::PointCloud<PointType> PointCloudXYZI;
 
-enum LID_TYPE{AVIA = 1, VELO16, OUST64, XT32}; //{1, 2, 3}
+enum LID_TYPE{AVIA = 1, VELO16, OUST64, XT32, Robosense}; //{1, 2, 3, 4, 5}
 enum Feature{Nor, Poss_Plane, Real_Plane, Edge_Jump, Edge_Plane, Wire, ZeroPoint};
 enum Surround{Prev, Next};
 enum E_jump{Nr_nor, Nr_zero, Nr_180, Nr_inf, Nr_blind};
@@ -92,6 +93,20 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(ouster_ros::Point,
     (std::uint32_t, range, range)
 )
 
+
+struct RsPointXYZIRT
+{
+  PCL_ADD_POINT4D;
+  float intensity;
+  // PCL_ADD_INTENSITY;
+  uint16_t ring = 0;
+  double timestamp = 0;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+} EIGEN_ALIGN16;
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(RsPointXYZIRT,
+                                  (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(uint16_t, ring, ring)(double, timestamp, timestamp))
+
 class Preprocess
 {
   public:
@@ -108,8 +123,8 @@ class Preprocess
   PointCloudXYZI pl_full, pl_corn, pl_surf;
   PointCloudXYZI pl_buff[128]; //maximum 128 line lidar
   vector<orgtype> typess[128]; //maximum 128 line lidar
-  int lidar_type, point_filter_num, N_SCANS;
-  double blind;
+  int lidar_type, point_filter_num, N_SCANS;;
+  double blind, max_blind;
   bool feature_enabled,given_offset_time;
   ros::Publisher pub_full, pub_surf, pub_corn;
     
@@ -119,6 +134,7 @@ class Preprocess
   void oust64_handler(const sensor_msgs::PointCloud2::ConstPtr &msg);
   void velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg);
   void xt32_handler(const sensor_msgs::PointCloud2::ConstPtr &msg);
+  void RobosenseHandler(const sensor_msgs::PointCloud2::ConstPtr &msg);
   void give_feature(PointCloudXYZI &pl, vector<orgtype> &types);
   void pub_func(PointCloudXYZI &pl, const ros::Time &ct);
   int  plane_judge(const PointCloudXYZI &pl, vector<orgtype> &types, uint i, uint &i_nex, Eigen::Vector3d &curr_direct);
