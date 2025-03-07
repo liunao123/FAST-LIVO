@@ -1030,7 +1030,7 @@ void set_posestamp(T & out)
     out.orientation.w = geoQuat.w;
 }
 // void publish_odometry(const ros::Publisher &pubOdomAftMapped)
-void publish_odometry(const ros::Publisher &pubOdomAftMapped, const ros::Publisher &pubLidarPose, const ros::Publisher &pubLidarOdom)
+void publish_odometry(const ros::Publisher &pubOdomAftMapped, const ros::Publisher &pubLidarPose, const ros::Publisher &pubLidarOdom, const double & lidar_time)
 {    
     odomAftMapped.header.frame_id = "camera_init";
     odomAftMapped.child_frame_id = "aft_mapped";
@@ -1075,7 +1075,7 @@ void publish_odometry(const ros::Publisher &pubOdomAftMapped, const ros::Publish
 
     geometry_msgs::PoseStamped lidar_pose;
     lidar_pose.header.frame_id = "odom";
-    lidar_pose.header.stamp = ros::Time().fromSec(last_timestamp_lidar);
+    lidar_pose.header.stamp = ros::Time().fromSec(lidar_time);
     lidar_pose.pose.position.x = T_lidar(0);
     lidar_pose.pose.position.y = T_lidar(1);
     lidar_pose.pose.position.z = T_lidar(2);
@@ -1128,7 +1128,7 @@ void publish_odometry(const ros::Publisher &pubOdomAftMapped, const ros::Publish
     lio_path_file.open("/home/map/fast_livo_path.txt", std::ios::app);
     lio_path_file.setf(std::ios::fixed, std::ios::floatfield);
     lio_path_file.precision(10);
-    lio_path_file << last_timestamp_lidar << " ";
+    lio_path_file << lidar_time << " ";
     lio_path_file.precision(5);
 
     lio_path_file
@@ -1141,7 +1141,7 @@ void publish_odometry(const ros::Publisher &pubOdomAftMapped, const ros::Publish
         << lidar_pose.pose.orientation.w << endl;
     lio_path_file.close();
 
-    dzlog_info("pose now is %f %f %f %f" ,last_timestamp_lidar, lidar_pose.pose.position.x, lidar_pose.pose.position.y, lidar_pose.pose.position.z );
+    dzlog_info("pose now is %f %f %f %f" ,lidar_time, lidar_pose.pose.position.x, lidar_pose.pose.position.y, lidar_pose.pose.position.z );
 }
 
 
@@ -1976,10 +1976,12 @@ int main(int argc, char** argv)
         // publish_odometry(pubOdomAftMapped);
         geoQuat = tf::createQuaternionMsgFromRollPitchYaw(euler_cur(0), euler_cur(1), euler_cur(2));
 
-        publish_odometry(pubOdomAftMapped, pubLidarPose , pubLidarOdom);
+        publish_odometry(pubOdomAftMapped, pubLidarPose , pubLidarOdom, LidarMeasures.lidar_beg_time);
+        
         sensor_msgs::PointCloud2 surf_points;
         pcl::toROSMsg(*feats_undistort, surf_points);
-        surf_points.header.stamp = ros::Time().fromSec( last_timestamp_lidar );
+        surf_points.header.stamp = ros::Time().fromSec( LidarMeasures.lidar_beg_time );
+        // surf_points.header.stamp = ros::Time().fromSec( last_timestamp_lidar );
         surf_points.header.frame_id = "lidar";
         pubSurfPoint.publish(surf_points);
 
