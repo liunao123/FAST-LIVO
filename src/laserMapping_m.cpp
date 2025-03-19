@@ -518,7 +518,12 @@ void imu_cbk(const sensor_msgs::Imu::ConstPtr &msg_in)
 
 cv::Mat getImageFromMsg(const sensor_msgs::ImageConstPtr& img_msg) {
   cv::Mat img;
+  cv::Mat img_t;
   img = cv_bridge::toCvCopy(img_msg, "bgr8")->image;
+
+  //  临时测试islan数据
+//   cv::pyrDown( img_t , img , cv::Size(img_t.cols/2, img_t.rows/2)) ; //生成的图像是原图在宽与高各缩小1/2
+
   return img ;
 //   return img ; //* 1.25;
 }
@@ -837,12 +842,12 @@ void publish_frame_world_rgb(const ros::Publisher & pubLaserCloudFullRes, lidar_
                 pointRGB.b = pixel[0];
                 float Gray = 0.2989 * pointRGB.r + 0.5870 * pointRGB.g + 0.1140 * pointRGB.b;
 
-                if ( Gray > 220.0  ) // ���׵ĵ㣬�Ͳ�Ҫ��
-                {
-                  pointRGB.r = 200;
-                  pointRGB.g = 200;
-                  pointRGB.b = 200;
-                }
+                // if ( Gray > 220.0  ) // 
+                // {
+                //   pointRGB.r = 200;
+                //   pointRGB.g = 200;
+                //   pointRGB.b = 200;
+                // }
                 laserCloudWorldRGB->push_back(pointRGB);
             }
 

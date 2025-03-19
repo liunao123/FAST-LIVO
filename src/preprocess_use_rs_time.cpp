@@ -61,13 +61,18 @@ void Preprocess::process(const sensor_msgs::PointCloud2::ConstPtr &msg, PointClo
   case XT32:
     xt32_handler(msg);
     break;
-  
+
+  case ROBOSENSE:
+    ROBOSENSE_handler(msg);
+    break;
+
   default:
     printf("Error LiDAR Type");
     break;
   }
   *pcl_out = pl_surf;
 }
+
 
 
 void Preprocess::avia_handler(const livox_ros_driver::CustomMsg::ConstPtr &msg)
@@ -461,6 +466,71 @@ void Preprocess::xt32_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
       }
     }
   }
+}
+
+
+void Preprocess::ROBOSENSE_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
+{
+  pl_surf.clear();
+
+  // for (size_t i = 0; i < msg->fields.size(); ++i) {
+  //     const sensor_msgs::PointField& field = msg->fields[i];
+  //     ROS_INFO("Field %d - Name: %s, Offset: %d, Datatype: %d, Count: %d",
+  //              i, field.name.c_str(), field.offset, field.datatype, field.count);
+  // }
+  pcl::PointCloud<RsPointXYZIRT> pl_orig;
+  pcl::fromROSMsg(*msg, pl_orig);
+
+  // ROS_WARN("first, last , msg->header.stamp.toSec() : %f . %f. %f ", pl_orig.points[0].timestamp, pl_orig.points.back().timestamp, msg->header.stamp.toSec());
+  // auto first_point_time = msg->header.stamp.toSec();
+  auto first_point_time = pl_orig.points[0].timestamp;
+
+  // 激光雷达，去除 nan 点
+  // pl_orig.is_dense = false; // 万集的雷达必须加这一句
+  // std::vector<int> save_index;
+  // ROS_ERROR("pl_orig->size()is %d", pl_orig.size());
+  // pcl::removeNaNFromPointCloud(pl_orig, pl_orig, save_index);
+  // ROS_ERROR("RobosenseHandler" );
+
+  int plsize = pl_orig.points.size();
+  if (plsize == 0)
+  {
+    ROS_ERROR("NO POINTS ......");
+    return;
+  }
+  pl_surf.reserve(plsize);
+  for (int i = 0; i < plsize; i++)
+  {
+    PointType added_pt;
+    added_pt.normal_x = 0;
+    added_pt.normal_y = 0;
+    added_pt.normal_z = 0;
+    added_pt.x = pl_orig.points[i].x;
+    added_pt.y = pl_orig.points[i].y;
+    added_pt.z = pl_orig.points[i].z;
+
+    if (std::isnan(added_pt.x) || std::isnan(added_pt.y) || std::isnan(added_pt.z))
+    {
+      continue;
+    }
+
+    added_pt.intensity = pl_orig.points[i].intensity;
+    added_pt.curvature =  (pl_orig.points[i].timestamp - first_point_time) * 1000.0 ;  // curvature unit: ms
+    // added_pt.curvature = pl_orig.points[i].timestamp * 1000.0; // curvature unit: ms 相对开始时刻的时间
+
+    if (i % point_filter_num == 0)
+    {
+      float range_temp_sqrt = added_pt.x * added_pt.x + added_pt.y * added_pt.y + added_pt.z * added_pt.z;
+      if (range_temp_sqrt < blind ) // max_blind 认为是 雷达的有效探测范围
+      {
+        continue;
+      }
+
+      pl_surf.points.push_back(added_pt);
+      // ROS_ERROR("added_pt.curvature is %f",  added_pt.curvature );
+    }
+  }
+  // ROS_ERROR("useful pts size is %d ",  pl_surf.points.size());
 }
 
 void Preprocess::give_feature(pcl::PointCloud<PointType> &pl, vector<orgtype> &types)

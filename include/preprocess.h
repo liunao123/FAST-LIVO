@@ -11,7 +11,7 @@ using namespace std;
 typedef pcl::PointXYZINormal PointType;
 typedef pcl::PointCloud<PointType> PointCloudXYZI;
 
-enum LID_TYPE{AVIA = 1, VELO16, OUST64, XT32, Robosense}; //{1, 2, 3, 4, 5}
+enum LID_TYPE{AVIA = 1, VELO16, OUST64, XT32, ROBOSENSE}; //{1, 2, 3, 4, 5}
 enum Feature{Nor, Poss_Plane, Real_Plane, Edge_Jump, Edge_Plane, Wire, ZeroPoint};
 enum Surround{Prev, Next};
 enum E_jump{Nr_nor, Nr_zero, Nr_180, Nr_inf, Nr_blind};
@@ -134,7 +134,7 @@ class Preprocess
   void oust64_handler(const sensor_msgs::PointCloud2::ConstPtr &msg);
   void velodyne_handler(const sensor_msgs::PointCloud2::ConstPtr &msg);
   void xt32_handler(const sensor_msgs::PointCloud2::ConstPtr &msg);
-  void RobosenseHandler(const sensor_msgs::PointCloud2::ConstPtr &msg);
+  void ROBOSENSE_handler(const sensor_msgs::PointCloud2::ConstPtr &msg);
   void give_feature(PointCloudXYZI &pl, vector<orgtype> &types);
   void pub_func(PointCloudXYZI &pl, const ros::Time &ct);
   int  plane_judge(const PointCloudXYZI &pl, vector<orgtype> &types, uint i, uint &i_nex, Eigen::Vector3d &curr_direct);
